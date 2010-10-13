@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = pulsetest
+TARGET = pulseapp
 QT = core
 
 CONFIG += debug link_pkgconfig warn_on

@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
 	pa_glib_mainloop *mainloop = pa_glib_mainloop_new(NULL);
 	pa_mainloop_api *api = pa_glib_mainloop_get_api(mainloop);
-	pa_context *context = pa_context_new(api, "pulsetest");
+	pa_context *context = pa_context_new(api, "pulseapp");
 	
 	if (pa_context_connect(context, NULL, PA_CONTEXT_NOFAIL, 0) < 0) {
 		pa_context_unref(context);
