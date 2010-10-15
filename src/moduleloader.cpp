@@ -1,3 +1,4 @@
+#include <QtDebug>
 #include "moduleloader.h"
 
 void Module::load_module_combine_cb(pa_context *, uint32_t success, void *)
