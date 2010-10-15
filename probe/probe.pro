@@ -14,7 +14,11 @@ QT  = core dbus
 QXT = core network
 
 SOURCES += main.cpp \
-    probe.cpp
+    probe.cpp \
+    bluezmanager.cpp \
+    bluezadapter.cpp
 
 HEADERS += \
-    probe.h
+    probe.h \
+    bluezmanager.h \
+    bluezadapter.h

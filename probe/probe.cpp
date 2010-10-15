@@ -6,9 +6,7 @@
 
 #include "probe.h"
 
-#define BLUEZ_SERVICE           "org.bluez"
-#define BLUEZ_ADAPTER_IFACE     "org.bluez.Adapter"
-#define BLUEZ_MANAGER_IFACE     "org.bluez.Manager"
+#define BLUEZ_SERVICE   "org.bluez"
 
 
 Probe::Probe(QObject *parent) :
@@ -28,38 +26,46 @@ bool Probe::startDiscovery()
     if (isDiscovering())
         return true;
 
-    QDBusReply<void> reply = adapter->call("StartDiscovery");
+    connect(adapter, SIGNAL(DeviceFound(QString, QVariantMap)), this, SLOT(onDeviceFound(QString, QVariantMap)));
+
+    QDBusReply<void> reply = adapter->StartDiscovery();
     if (!reply.isValid()) {
         qCritical() << Q_FUNC_INFO << ": calling StartDiscovery() failed with" << reply.error().name();
+        disconnect(adapter, SIGNAL(DeviceFound(QString, QVariantMap)), this, SLOT(onDeviceFound(QString, QVariantMap)));
         return false;
     }
 
     discovering = true;
-    QTimer::singleShot(5000, this, SLOT(stopDiscovery())); // FIXME: remove
     return true;
 }
 
 bool Probe::stopDiscovery()
 {
     if (!isDiscovering())
-        return false;
+        return true;
 
-    QDBusReply<void> reply = adapter->call("StopDiscovery");
+    QDBusReply<void> reply = adapter->StopDiscovery();
     if (!reply.isValid()) {
         qCritical() << Q_FUNC_INFO << ": calling StopDiscovery() failed with" << reply.error().name();
         return false;
     }
 
+    disconnect(adapter, SIGNAL(DeviceFound(QString, QVariantMap)), this, SLOT(onDeviceFound(QString, QVariantMap)));
     discovering = false;
     return true;
 }
 
+void Probe::onDeviceFound(const QString &address, const QVariantMap &properties)
+{
+    qDebug() << address << properties.value("Name").toString()
+             << "=>" << properties.value("RSSI").toInt();
+}
+
 bool Probe::initManager()
 {
-    manager = new QDBusInterface(BLUEZ_SERVICE, "/", BLUEZ_MANAGER_IFACE,
-                                 QDBusConnection::systemBus(), this);
+    manager = new org::bluez::Manager(BLUEZ_SERVICE, "/", QDBusConnection::systemBus(), this);
     if (!manager->isValid()) {
-        qCritical() << Q_FUNC_INFO << ": couldn't create" << BLUEZ_MANAGER_IFACE << "interface";
+        qCritical() << Q_FUNC_INFO << ": couldn't create" << manager->interface() << "interface";
         delete manager;
         manager = 0;
         return false;
@@ -73,16 +79,15 @@ bool Probe::initAdapter()
     if (!manager && !initManager())
         return false;
 
-    QDBusReply<QDBusObjectPath> reply = manager->call("DefaultAdapter");
+    QDBusReply<QDBusObjectPath> reply = manager->DefaultAdapter();
     if (!reply.isValid()) {
         qCritical() << Q_FUNC_INFO << ": calling DefaultAdapter() failed with" << reply.error().name();
         return false;
     }
 
-    adapter = new QDBusInterface(BLUEZ_SERVICE, reply.value().path(), BLUEZ_ADAPTER_IFACE,
-                                 QDBusConnection::systemBus(), this);
+    adapter = new org::bluez::Adapter(BLUEZ_SERVICE, reply.value().path(), QDBusConnection::systemBus(), this);
     if (!adapter->isValid()) {
-        qCritical() << Q_FUNC_INFO << ": couldn't create" << BLUEZ_ADAPTER_IFACE << "interface";
+        qCritical() << Q_FUNC_INFO << ": couldn't create" << adapter->interface() << "interface";
         delete adapter;
         adapter = 0;
         return false;

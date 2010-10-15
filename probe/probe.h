@@ -1,8 +1,11 @@
 #ifndef PROBE_H
 #define PROBE_H
 
-#include <QDBusInterface>
 #include <QObject>
+#include <QVariantMap>
+
+#include "bluezadapter.h"
+#include "bluezmanager.h"
 
 class Probe : public QObject
 {
@@ -17,13 +20,16 @@ public slots:
     bool startDiscovery();
     bool stopDiscovery();
 
+private slots:
+    void onDeviceFound(const QString &address, const QVariantMap &properties);
+
 private:
     bool initAdapter();
     bool initManager();
 
     bool discovering;
-    QDBusInterface *adapter;
-    QDBusInterface *manager;
+    org::bluez::Adapter *adapter;
+    org::bluez::Manager *manager;
 };
 
 #endif // PROBE_H
