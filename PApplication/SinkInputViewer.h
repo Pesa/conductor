@@ -3,6 +3,7 @@
 
 #include <QtDebug>
 #include <QCoreApplication>
+#include <QMap>
 
 #include <pulse/context.h>
 #include <pulse/glib-mainloop.h>
@@ -14,15 +15,19 @@ class SinkInput{
 
 private:
 	//int num_sinks_input_available;
-	QList<QString>* sinks_input;
+	QMap<uint32_t,const char*>* sinks_input;
 
 public:
 
 	SinkInput(){
-		sinks_input = new QList<QString>();
+		sinks_input = new QMap<uint32_t,const char*>();//index & name sink input
 	}	
 	
-	void determine_sink_input_available(pa_context *, pa_operation *);
+	QMap<uint32_t, const char *> get_sinks_input();
+	
+	void determine_sink_input_available(pa_context *);
+	
+	void move_audio_stream(pa_context*, uint32_t);//move stream from a sink_input to a new_sink specified in the second parameter
 
 	static void sink_input_cb(pa_context *, const pa_sink_input_info *, int , void *);
 	

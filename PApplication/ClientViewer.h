@@ -21,7 +21,7 @@ public:
 	
 	QList<QString>* get_clients();
 	
-	void determine_client_available(pa_context *, pa_operation *);
+	void determine_client_available(pa_context *);
 
 	static void client_cb(pa_context *, const pa_client_info *, int , void *);
 

@@ -20,12 +20,19 @@ void Sink::sink_cb(pa_context *c, const pa_sink_info *i, int eol, void * l)
 	
 }
 
-void Sink::determine_sink_available(pa_context *c, pa_operation * o)
+void Sink::determine_sink_available(pa_context *c)
 {
+	pa_operation * o;	
+	
 	if (!(o = pa_context_get_sink_info_list(c, Sink::sink_cb, static_cast<void*>(sinks)))) {
 			qWarning() << "pa_context_get_sink_info_list() failed";
 			return;
 		}
+		
+	/*qDebug() << "lista dei nomi dei SINK: ";
+			for (int j = 0; j < sinks->size(); ++j) {
+				qDebug() << "sink: " << sinks->at(j);
+			}*/
 	pa_operation_unref(o);
 }
 

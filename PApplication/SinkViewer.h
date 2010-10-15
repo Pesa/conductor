@@ -24,7 +24,7 @@ public:
 		sinks = new QList<QString>();
 	}
 	
-	void determine_sink_available(pa_context * , pa_operation *);
+	void determine_sink_available(pa_context * );
 
 	static void sink_cb(pa_context *, const pa_sink_info *, int , void *);
 

@@ -29,11 +29,12 @@ public:
 	void set_loaded_tunnel_module(bool flag);
 	void set_loaded_combine_module(bool flag);
 	
-	void load_module_tunnel(pa_context *, pa_operation*, QString );
+	void load_module_tunnel(pa_context *, const char* );
 	
-	void load_module_combine(pa_context *, pa_operation*, QList<uint32_t>);
+	void load_module_combine(pa_context *, QList<uint32_t>);
 	
-	static void load_module_cb(pa_context *, uint32_t , void *);
+	static void load_module_tunnel_cb(pa_context *, uint32_t , void *);
+	static void load_module_combine_cb(pa_context *, uint32_t , void *);
 	
 	template <typename T> 
 	std::string to_string(const T& value)

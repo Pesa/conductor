@@ -29,7 +29,17 @@ public:
 	}
 	~Box(){}
 	
-	void determine_server_connected_to(pa_context * c, pa_operation *o){
+	Sink get_sink(){return *sink;}
+	
+	SinkInput get_sink_input(){return *sink_input;}
+	
+	Client get_client(){return *client;}
+	
+	Module get_module(){return *loader;}
+	
+	void determine_server_connected_to(pa_context * c)
+	{
+		pa_operation * o;
 		if (!(o = pa_context_get_server_info(c, server_cb, NULL))) {
 			qWarning() << "pa_context_get_server_info() failed";
 			return;
@@ -37,12 +47,13 @@ public:
 		pa_operation_unref(o);
 	}
 
-	static void server_cb(pa_context *, const pa_server_info *i, void *){
+	static void server_cb(pa_context *, const pa_server_info *i, void *)
+	{
 		qDebug() << "running @" << i->host_name << '\n';
 	}
 	
-	static void context_state_cb(pa_context * c, void *b ){
-	
+	static void context_state_cb(pa_context * c, void *b )
+	{
 		Box* box = static_cast<Box*>(b);
 
 		pa_context_state_t state = pa_context_get_state(c);
@@ -50,16 +61,21 @@ public:
 		if (state == PA_CONTEXT_READY) {
 			int local = pa_context_is_local(c);
 			qDebug() << "connected to" << (local ? "local" : "remote") << "PulseAudio server" << pa_context_get_server(c);
-			
-			pa_operation *o;
 	
-			box->determine_server_connected_to(c, o);
+			box->determine_server_connected_to(c);
 		
-			(box->sink)->determine_sink_available(c, o);
+			(box->sink)->determine_sink_available(c);
 		
-			(box->sink_input)->determine_sink_input_available(c, o);
+			(box->sink_input)->determine_sink_input_available(c);
 			
-			(box->client)->determine_client_available(c, o);
+			/*qDebug() << "lista dei nomi dei sink_input: ";
+			QMap<uint32_t, const char*>::iterator it;
+			for ( it = ((box->sink_input)->get_sinks_input()).begin(); it != ((box->sink_input)->get_sinks_input()).end(); ++it ) {
+				qDebug() << "nome sink_input" << it.value();
+			}*/
+			
+			
+			(box->client)->determine_client_available(c);
 			
 			/*qDebug() << "lista dei nomi dei clients: ";
 			for (int j = 0; j < ((box->client)->get_clients())->size(); ++j) {
@@ -67,14 +83,15 @@ public:
 			}*/
 			
 			//server to connect to create a tunnel connection
-			QString* server = new QString("");
+			const char* server = "server=127.0.0.1";
 			
 			//slave list for simultaneously playback
 			QList<uint32_t>* list_slaves = new QList<uint32_t>();
 			
-			(box->loader)->load_module_tunnel(c, o, *server);
+			(box->loader)->load_module_tunnel(c, server);
 			
-			(box->loader)->load_module_combine(c, o, *list_slaves);
+			//(box->loader)->load_module_combine(c, *list_slaves);
+			(box->sink_input)->move_audio_stream(c, 1);		
 		}
 	
 		else if (!PA_CONTEXT_IS_GOOD(state)) {
@@ -107,6 +124,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	pa_context_set_state_callback(context, Box::context_state_cb, static_cast<void*>(b));
+	
 
 	return app.exec();
 }
