@@ -14,19 +14,23 @@ QXT = core network
 
 SOURCES += main.cpp \
     mainwindow.cpp \
-    clientviewer.cpp \
     moduleloader.cpp \
-    sinkinputviewer.cpp \
-    sinkviewer.cpp \
     papplication.cpp \
-    algo.cpp
+    algo.cpp \
+    pacontroller.cpp \
+    sinkinputmodel.cpp \
+    sinkinput.cpp \
+    sink.cpp \
+    sinkmodel.cpp
 
 HEADERS += \
     mainwindow.h \
-    clientviewer.h \
     moduleloader.h \
-    sinkinputviewer.h \
-    sinkviewer.h
+    pacontroller.h \
+    sinkinputmodel.h \
+    sinkinput.h \
+    sink.h \
+    sinkmodel.h
 
 FORMS   += \
     mainwindow.ui
