@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "pacontroller.h"
+
 namespace Ui {
     class MainWindow;
 }
@@ -22,6 +24,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    PAController *controller;
 };
 
 #endif // MAINWINDOW_H
