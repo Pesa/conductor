@@ -20,7 +20,7 @@ Probe::Probe(QObject *parent) :
     rpc->attachSlot("removeDevice", this, SLOT(removeDevice(quint64, QString)));
     rpc->attachSlot("startDiscovery", this, SLOT(startDiscovery(quint64)));
     rpc->attachSlot("stopDiscovery", this, SLOT(stopDiscovery(quint64)));
-    rpc->attachSignal(this, SIGNAL(rssiChanged(QString, int)), "updateRssi");
+    rpc->attachSignal(this, SIGNAL(rssiChanged(QString, int)), "rssiChanged");
 
     rpc->listen(QHostAddress::Any, RPC_PORT);
 }
