@@ -16,13 +16,19 @@ Probe::Probe(QObject *parent) :
     rpc(new QxtRPCPeer(this)),
     discovering(false)
 {
-    rpc->attachSlot("addDevice", this, SLOT(addDevice(quint64, QString)));
-    rpc->attachSlot("removeDevice", this, SLOT(removeDevice(quint64, QString)));
+    rpc->attachSlot("hello", this, SLOT(hello(quint64,qulonglong)));
+    rpc->attachSlot("addDevice", this, SLOT(addDevice(quint64,QString)));
+    rpc->attachSlot("removeDevice", this, SLOT(removeDevice(quint64,QString)));
     rpc->attachSlot("startDiscovery", this, SLOT(startDiscovery(quint64)));
     rpc->attachSlot("stopDiscovery", this, SLOT(stopDiscovery(quint64)));
-    rpc->attachSignal(this, SIGNAL(rssiChanged(QString, int)), "rssiChanged");
+    rpc->attachSignal(this, SIGNAL(rssiChanged(qulonglong,QString,int)), "rssiChanged");
 
     rpc->listen(QHostAddress::Any, RPC_PORT);
+}
+
+void Probe::hello(quint64, qulonglong probeId)
+{
+    myId = probeId;
 }
 
 void Probe::addDevice(quint64, const QString &address)
@@ -43,12 +49,12 @@ bool Probe::startDiscovery(quint64)
     if (isDiscovering())
         return true;
 
-    connect(adapter, SIGNAL(DeviceFound(QString, QVariantMap)), SLOT(onDeviceFound(QString, QVariantMap)));
+    connect(adapter, SIGNAL(DeviceFound(QString,QVariantMap)), SLOT(onDeviceFound(QString,QVariantMap)));
 
     QDBusReply<void> reply = adapter->StartDiscovery();
     if (!reply.isValid()) {
         qCritical("StartDiscovery() failed with: %s", qPrintable(reply.error().name()));
-        adapter->disconnect(SIGNAL(DeviceFound(QString, QVariantMap)));
+        adapter->disconnect(SIGNAL(DeviceFound(QString,QVariantMap)));
         return false;
     }
 
@@ -67,7 +73,7 @@ bool Probe::stopDiscovery(quint64)
         return false;
     }
 
-    adapter->disconnect(SIGNAL(DeviceFound(QString, QVariantMap)));
+    adapter->disconnect(SIGNAL(DeviceFound(QString,QVariantMap)));
     discovering = false;
     return true;
 }
@@ -80,7 +86,7 @@ void Probe::onDeviceFound(const QString &address, const QVariantMap &properties)
     int newRssi = properties.value("RSSI").toInt();
     if (!rssi.contains(address) || (qAbs(rssi.value(address) - newRssi) >= MIN_RSSI_DELTA)) {
         rssi[address] = newRssi;
-        emit rssiChanged(address, newRssi);
+        emit rssiChanged(myId, address, newRssi);
     }
 }
 

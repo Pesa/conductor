@@ -13,6 +13,7 @@
 class Probe : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool discovering READ isDiscovering)
 
 public:
     explicit Probe(QObject *parent = 0);
@@ -20,13 +21,14 @@ public:
     bool isDiscovering() const { return discovering; }
 
 public slots:
-    void addDevice(quint64 id, const QString &address);
-    void removeDevice(quint64 id, const QString &address);
-    bool startDiscovery(quint64 id = 0);
-    bool stopDiscovery(quint64 id = 0);
+    void hello(quint64, qulonglong probeId);
+    void addDevice(quint64, const QString &address);
+    void removeDevice(quint64, const QString &address);
+    bool startDiscovery(quint64 = 0);
+    bool stopDiscovery(quint64 = 0);
 
 signals:
-    void rssiChanged(const QString &device, int newRssi);
+    void rssiChanged(qulonglong probeId, const QString &device, int newRssi);
 
 private slots:
     void onDeviceFound(const QString &address, const QVariantMap &properties);
@@ -40,6 +42,7 @@ private:
     QxtRPCPeer *rpc;
 
     bool discovering;
+    qulonglong myId;
     QSet<QString> devices;
     QHash<QString, int> rssi;
 };
