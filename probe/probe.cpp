@@ -1,6 +1,7 @@
 #include <QDBusConnection>
 #include <QDBusObjectPath>
 #include <QDBusReply>
+#include <QxtRPCPeer>
 
 #include "probe.h"
 

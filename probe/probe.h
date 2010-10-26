@@ -4,11 +4,11 @@
 #include <QObject>
 #include <QHash>
 #include <QSet>
-#include <QVariantMap>
-#include <QxtRPCPeer>
 
 #include "bluezadapter.h"
 #include "bluezmanager.h"
+
+class QxtRPCPeer;
 
 class Probe : public QObject
 {
