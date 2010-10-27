@@ -17,19 +17,19 @@ Probe::Probe(QObject *parent) :
     rpc(new QxtRPCPeer(this)),
     discovering(false)
 {
-    rpc->attachSlot("hello", this, SLOT(hello(quint64,qulonglong)));
+    rpc->attachSlot("hello", this, SLOT(hello(quint64,QString)));
     rpc->attachSlot("addDevice", this, SLOT(addDevice(quint64,QString)));
     rpc->attachSlot("removeDevice", this, SLOT(removeDevice(quint64,QString)));
     rpc->attachSlot("startDiscovery", this, SLOT(startDiscovery(quint64)));
     rpc->attachSlot("stopDiscovery", this, SLOT(stopDiscovery(quint64)));
-    rpc->attachSignal(this, SIGNAL(rssiChanged(qulonglong,QString,int)), "rssiChanged");
+    rpc->attachSignal(this, SIGNAL(rssiChanged(QString,QString,int)), "rssiChanged");
 
     rpc->listen(QHostAddress::Any, RPC_PORT);
 }
 
-void Probe::hello(quint64, qulonglong probeId)
+void Probe::hello(quint64, const QString &probeName)
 {
-    myId = probeId;
+    myName = probeName;
 }
 
 void Probe::addDevice(quint64, const QString &address)
@@ -87,7 +87,7 @@ void Probe::onDeviceFound(const QString &address, const QVariantMap &properties)
     int newRssi = properties.value("RSSI").toInt();
     if (!rssi.contains(address) || (qAbs(rssi.value(address) - newRssi) >= MIN_RSSI_DELTA)) {
         rssi[address] = newRssi;
-        emit rssiChanged(myId, address, newRssi);
+        emit rssiChanged(myName, address, newRssi);
     }
 }
 

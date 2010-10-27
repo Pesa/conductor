@@ -21,14 +21,14 @@ public:
     bool isDiscovering() const { return discovering; }
 
 public slots:
-    void hello(quint64, qulonglong probeId);
+    void hello(quint64, const QString &probeName);
     void addDevice(quint64, const QString &address);
     void removeDevice(quint64, const QString &address);
     bool startDiscovery(quint64 = 0);
     bool stopDiscovery(quint64 = 0);
 
 signals:
-    void rssiChanged(qulonglong probeId, const QString &device, int newRssi);
+    void rssiChanged(const QString &probeName, const QString &device, int newRssi);
 
 private slots:
     void onDeviceFound(const QString &address, const QVariantMap &properties);
@@ -42,7 +42,7 @@ private:
     QxtRPCPeer *rpc;
 
     bool discovering;
-    qulonglong myId;
+    QString myName;
     QSet<QString> devices;
     QHash<QString, int> rssi;
 };
