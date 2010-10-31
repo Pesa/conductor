@@ -4,6 +4,8 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    QApplication::setApplicationName("conductor");
+
     MainWindow w;
     w.show();
 
