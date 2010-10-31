@@ -21,7 +21,9 @@ SOURCES += main.cpp \
     sinkinputmodel.cpp \
     sinkinput.cpp \
     sink.cpp \
-    sinkmodel.cpp
+    sinkmodel.cpp \
+    probeinterface.cpp \
+    probemanager.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -30,7 +32,9 @@ HEADERS += \
     sinkinputmodel.h \
     sinkinput.h \
     sink.h \
-    sinkmodel.h
+    sinkmodel.h \
+    probeinterface.h \
+    probemanager.h
 
 FORMS   += \
     mainwindow.ui
