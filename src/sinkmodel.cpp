@@ -61,14 +61,12 @@ bool SinkModel::populate(pa_context *c)
 {
     pa_operation *op;
 
-    op = pa_context_get_sink_info_list(c, SinkModel::populateSinkCallback, this);
-    if (op) {
-        sinksTemp = new QList<Sink>;
-        pa_operation_unref(op);
-        return true;
-    }
+    if (!(op = pa_context_get_sink_info_list(c, SinkModel::populateSinkCallback, this)))
+        return false;
 
-    return false;
+    pa_operation_unref(op);
+    sinksTemp = new QList<Sink>;
+    return true;
 }
 
 void SinkModel::removeSink(uint32_t index)
