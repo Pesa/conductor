@@ -14,7 +14,6 @@ QXT = core network
 
 SOURCES += main.cpp \
     mainwindow.cpp \
-    moduleloader.cpp \
     papplication.cpp \
     algo.cpp \
     pacontroller.cpp \
@@ -27,7 +26,6 @@ SOURCES += main.cpp \
 
 HEADERS += \
     mainwindow.h \
-    moduleloader.h \
     pacontroller.h \
     sinkinputmodel.h \
     sinkinput.h \

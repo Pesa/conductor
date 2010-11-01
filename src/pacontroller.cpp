@@ -1,5 +1,8 @@
+#include <QStringList>
+
 #include <pulse/context.h>
 #include <pulse/glib-mainloop.h>
+#include <pulse/introspect.h>
 #include <pulse/operation.h>
 #include <pulse/subscribe.h>
 
@@ -53,7 +56,7 @@ void PAController::stateCallback(pa_context *c, void *userdata)
         else
             emit self->warning(tr("pa_context_subscribe() failed"));
 
-        /* initialize the table models */
+        /* initialize table models */
         if (!self->inputModel->populate(c))
             emit self->warning(tr("failed to populate SinkInputModel"));
         if (!self->sinkModel->populate(c))
@@ -113,4 +116,58 @@ void PAController::subscribeCallback(pa_context *c, pa_subscription_event_type_t
         }
         break;
     }
+}
+
+bool PAController::combineSinks(const QList<uint32_t> &sinks, const QString &name)
+{
+    if (sinks.size() < 2)
+        return false;
+
+    /* build the list of arguments to module-combine */
+    QStringList arglist;
+    QString slaves;
+    foreach (uint32_t s, sinks)
+        slaves += s + ',';
+    slaves.chop(1);
+    arglist << slaves.prepend("slaves=");
+    if (!name.isEmpty())
+        arglist << name.trimmed().prepend("sink_name=");
+    arglist << "adjust_time=5";
+    arglist << "resample_method=src-sinc-best-quality";
+
+    const char *args = arglist.join(" ").toLocal8Bit().constData();
+    pa_operation *op;
+
+    if (!(op = pa_context_load_module(context, "module-combine", args, PAController::combineCallback, this)))
+        return false;
+
+    pa_operation_unref(op);
+    return true;
+}
+
+void PAController::combineCallback(pa_context *, uint32_t, void *userdata)
+{
+    PAController *self = static_cast<PAController*>(userdata);
+    Q_UNUSED(self);
+}
+
+bool PAController::createTunnel(const QByteArray &server)
+{
+    if (server.isEmpty())
+        return false;
+
+    const char *args = server.trimmed().prepend("server=").constData();
+    pa_operation *op;
+
+    if (!(op = pa_context_load_module(context, "module-tunnel-sink", args, PAController::tunnelCallback, this)))
+        return false;
+
+    pa_operation_unref(op);
+    return true;
+}
+
+void PAController::tunnelCallback(pa_context *, uint32_t, void *userdata)
+{
+    PAController *self = static_cast<PAController*>(userdata);
+    Q_UNUSED(self);
 }
