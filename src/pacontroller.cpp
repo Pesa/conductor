@@ -21,6 +21,14 @@ PAController::PAController(QObject *parent) :
 
 PAController::~PAController()
 {
+    /* unload all modules loaded by us */
+    pa_operation *op;
+    foreach (uint32_t idx, loadedModules) {
+        if ((op = pa_context_unload_module(context, idx, NULL, NULL)))
+            pa_operation_unref(op);
+    }
+
+    /* disconnect and release resources */
     pa_context_disconnect(context);
     pa_context_unref(context);
     pa_glib_mainloop_free(mainloop);
@@ -118,24 +126,28 @@ void PAController::subscribeCallback(pa_context *c, pa_subscription_event_type_t
     }
 }
 
-bool PAController::combineSinks(const QList<uint32_t> &sinks, const QString &name)
+bool PAController::combineSinks(const QList<uint32_t> &sinks, const QString &name, int adjustTime, const QString &resampleMethod)
 {
     if (sinks.size() < 2)
         return false;
 
     /* build the list of arguments to module-combine */
     QStringList arglist;
+
     QString slaves;
     foreach (uint32_t s, sinks)
         slaves += s + ',';
     slaves.chop(1);
     arglist << slaves.prepend("slaves=");
-    if (!name.isEmpty())
-        arglist << name.trimmed().prepend("sink_name=");
-    arglist << "adjust_time=5";
-    arglist << "resample_method=src-sinc-best-quality";
 
-    const char *args = arglist.join(" ").toLocal8Bit().constData();
+    if (!name.trimmed().isEmpty())
+        arglist << name.trimmed().prepend("sink_name=");
+    if (adjustTime >= 0)
+        arglist << QString::number(adjustTime).prepend("adjust_time=");
+    if (!resampleMethod.trimmed().isEmpty())
+        arglist << resampleMethod.trimmed().prepend("resample_method=");
+
+    QByteArray args = arglist.join(" ").toLocal8Bit();
     pa_operation *op;
 
     if (!(op = pa_context_load_module(context, "module-combine", args, PAController::combineCallback, this)))
@@ -145,18 +157,18 @@ bool PAController::combineSinks(const QList<uint32_t> &sinks, const QString &nam
     return true;
 }
 
-void PAController::combineCallback(pa_context *, uint32_t, void *userdata)
+void PAController::combineCallback(pa_context *, uint32_t idx, void *userdata)
 {
     PAController *self = static_cast<PAController*>(userdata);
-    Q_UNUSED(self);
+    self->loadedModules.prepend(idx);
 }
 
 bool PAController::createTunnel(const QByteArray &server)
 {
-    if (server.isEmpty())
+    if (server.trimmed().isEmpty())
         return false;
 
-    const char *args = server.trimmed().prepend("server=").constData();
+    QByteArray args = server.trimmed().prepend("server=");
     pa_operation *op;
 
     if (!(op = pa_context_load_module(context, "module-tunnel-sink", args, PAController::tunnelCallback, this)))
@@ -166,8 +178,8 @@ bool PAController::createTunnel(const QByteArray &server)
     return true;
 }
 
-void PAController::tunnelCallback(pa_context *, uint32_t, void *userdata)
+void PAController::tunnelCallback(pa_context *, uint32_t idx, void *userdata)
 {
     PAController *self = static_cast<PAController*>(userdata);
-    Q_UNUSED(self);
+    self->loadedModules.prepend(idx);
 }

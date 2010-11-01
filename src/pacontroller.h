@@ -1,6 +1,7 @@
 #ifndef PACONTROLLER_H
 #define PACONTROLLER_H
 
+#include <QList>
 #include <QObject>
 
 #include "sinkinputmodel.h"
@@ -17,7 +18,8 @@ public:
     explicit PAController(QObject *parent = 0);
     ~PAController();
 
-    bool combineSinks(const QList<uint32_t> &sinks, const QString &name = QString());
+    bool combineSinks(const QList<uint32_t> &sinks, const QString &name = QString(),
+                      int adjustTime = -1, const QString &resampleMethod = QString());
     bool createTunnel(const QByteArray &server);
 
     SinkInputModel *modelForSinkInputs() { return inputModel; }
@@ -39,6 +41,7 @@ private:
 
     pa_context *context;
     pa_glib_mainloop *mainloop;
+    QList<uint32_t> loadedModules;
     SinkInputModel *inputModel;
     SinkModel *sinkModel;
 };
