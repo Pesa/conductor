@@ -14,7 +14,6 @@ QXT = core network
 
 SOURCES += main.cpp \
     mainwindow.cpp \
-    papplication.cpp \
     algo.cpp \
     pacontroller.cpp \
     sinkinputmodel.cpp \
