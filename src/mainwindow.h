@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 
+class Algorithm;
 class PAController;
 class ProbeManager;
 
@@ -27,6 +28,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    Algorithm *algo;
     PAController *controller;
     ProbeManager *probe;
 };

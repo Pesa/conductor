@@ -3,6 +3,7 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "algorithm.h"
 #include "pacontroller.h"
 #include "probemanager.h"
 
@@ -10,6 +11,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
+    algo(new Algorithm(this)),
     controller(new PAController(this)),
     probe(new ProbeManager(this))
 {
@@ -17,11 +19,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->sinkInputView->setModel(controller->modelForSinkInputs());
     ui->sinkView->setModel(controller->modelForSinks());
 
+    connect(ui->monitorButton, SIGNAL(clicked(bool)), SLOT(monitor(bool)));
     connect(controller, SIGNAL(error(QString)), SLOT(displayError(QString)));
     connect(controller, SIGNAL(warning(QString)), SLOT(displayWarning(QString)));
     connect(controller, SIGNAL(connected(QString,bool)), SLOT(onPAConnected(QString,bool)));
     connect(probe, SIGNAL(ready()), SLOT(onProbeReady()));
-    connect(ui->monitorButton, SIGNAL(clicked(bool)), SLOT(monitor(bool)));
+    connect(probe, SIGNAL(rssiChanged(QString,QString,int)), algo, SLOT(setRssi(QString,QString,int)));
 
     QTimer::singleShot(0, controller, SLOT(connectToDaemon()));
     QTimer::singleShot(0, probe, SLOT(connectToProbes()));

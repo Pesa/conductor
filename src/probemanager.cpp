@@ -16,7 +16,7 @@ ProbeManager::ProbeManager(QObject *parent) :
         ProbeInterface *probe = new ProbeInterface(i.key(), i.value());
         probes[i.key()] = probe;
         group->addSignal(probe, SIGNAL(connected(QString)));
-        connect(probe, SIGNAL(rssiChanged(QString,QString,int)), SLOT(rssiChanged(QString,QString,int)));
+        connect(probe, SIGNAL(rssiChanged(QString,QString,int)), SIGNAL(rssiChanged(QString,QString,int)));
     }
 
     connect(group, SIGNAL(allSignalsReceived()), SIGNAL(ready()));
@@ -55,10 +55,4 @@ void ProbeManager::stopMonitoring(const QString &device)
         i->stopDiscovery();
         i->removeDevice(device);
     }
-}
-
-void ProbeManager::rssiChanged(const QString &probeName, const QString &device, int newRssi)
-{
-    qDebug("%s [%s] => %i", qPrintable(probeName), qPrintable(device), newRssi); // FIXME: for testing only!
-    rssi[device][probeName] = newRssi;
 }

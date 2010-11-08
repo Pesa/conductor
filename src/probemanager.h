@@ -23,9 +23,7 @@ public slots:
 
 signals:
     void ready();
-
-private slots:
-    void rssiChanged(const QString &probeName, const QString &device, int newRssi);
+    void rssiChanged(const QString &probe, const QString &device, int rssi);
 
 private:
     /* map: room name => probe IP address */
@@ -33,9 +31,6 @@ private:
 
     /* map: room name => probe RPC interface */
     QHash<QString, ProbeInterface*> probes;
-
-    /* map: device address => room name => RSSI */
-    QHash<QString, QHash<QString,int> > rssi;
 
     /* group for probes' connected() signal */
     QxtSignalGroup *group;

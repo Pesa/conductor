@@ -15,6 +15,7 @@ QXT = core network
 SOURCES += main.cpp \
     mainwindow.cpp \
     algo.cpp \
+    algorithm.cpp \
     pacontroller.cpp \
     sinkinputmodel.cpp \
     sinkinput.cpp \
@@ -25,6 +26,7 @@ SOURCES += main.cpp \
 
 HEADERS += \
     mainwindow.h \
+    algorithm.h \
     pacontroller.h \
     sinkinputmodel.h \
     sinkinput.h \
