@@ -2,7 +2,7 @@
 
 \usepackage{cite}
 \usepackage[pdftex]{graphicx}
-
+\usepackage{algorithmic}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
@@ -20,7 +20,7 @@ Email: email@studenti.math.unipd.it}
 \IEEEauthorblockN{Martina Astegno}
 \IEEEauthorblockA{Universit\`{a} degli Studi di Padova\\
 Corso di Laurea Magistrale in Informatica\\
-Email: email@studenti.math.unipd.it}}
+Email: martina.astegno@studenti.unipd.it}}
 
 % make the title area
 \maketitle
@@ -62,7 +62,7 @@ In 1994 L.M. Ericsson company began to be interested in wireless connection betw
 In figure \ref{stack} we can see the architecture of bluetooth protocol.
 \begin{figure}[h]
 \centering
-\includegraphics[scale = 0.22]{stackBT.png}
+\includegraphics[scale = 0.8]{stacksimple1.png}
 \caption{Bluetooth Protocol Stack}
 \label{stack}
 \end{figure}
@@ -75,34 +75,77 @@ The protocols can be divided in four major classes:
 \item Adopted protocols
 \end{itemize}
 
--------TOFIX: a questo punto pesanvo di concertrare l'attenzione sul service discovery protocol usato per individuare le altre devices.e spiegare u pò come funzia
+%-------TOFIX: a questo punto pesanvo di concertrare l'attenzione sul service discovery protocol usato per individuare le altre devices.e spiegare u pò come funzia
 
 
-The bluetooth protocol acts in 2.4Ghz frequency using 79 channels (between 2.402 and 2.480 Ghz) and the maximum transmission velocity is 2.1 Mbit/s (version 2.0). The devices can be divided in three classes according to power level and range.\\
-dopo un intro alla tecnologia del bluetooth introduco un pò coem viene gestito il flusso audio con pulseaudio server e così finisce l'intro-----------
+%The bluetooth protocol acts in 2.4Ghz frequency using 79 channels (between 2.402 and 2.480 Ghz) and the maximum transmission velocity is 2.1 Mbit/s (version 2.0). The devices can be divided in three classes according to power level and range.\\
+%dopo un intro alla tecnologia del bluetooth introduco un pò coem viene gestito il flusso audio con pulseaudio server e così finisce l'intro-----------
 \section{General architecture}
 \subsection{Requirements}
+The requirements for the correct functioning of the implemented application can be explained to follow.
 \begin{itemize}
-\item antenne+speaker per ogni room
-\item smartphone (1)
-\item central server
+\item{\textbf{Smartphone:}} the device necessary to locate in which room the person is. We assume that there is only one smartphone to identify.  
+\item{\textbf{Central server:}} it stores the main application and it controls all the communications from/to the BT adapter.
 \end{itemize}
+In every room there must be available:
+\begin{itemize}
+\item{a \textbf{bluetooth host adapter:}} it detects the bluetooth signal power, and trasmits throught a simple application the RSSI value to the central server; 
+\item{a \textbf{speaker:}} it lets out sound when the associate BT adapter is selected for playback.
+\end{itemize}
+
 %immagine con la architettura ad alto livello che mostra come interagiscono le componenti
 
 \subsection{Bluetooth module}
+The main component of the project is the Bluetooth module, that manages the RSSI values and communications between hosts and server. It is based on a simple and very efficient application, named \texttt{Probe} and associated to every bleutooth adapter, that is able to interface with \textbf{bluez} throught \textbf{d-bus}. It takes charge of a discovery request and it keeps track of adapters available and their corresponding RSSI values.     
+
 \subsection{Pulseaudio module}
+In Pulseaudio we distinguish two particolar types of structures managed in our application.
+\begin{itemize}
+\item \texttt{pa\_sink}: it rapresents
+\item \texttt{pa\_sink\_input}:
+\end{itemize}
+The idea concerns in redirecting the \texttt{pa\_sink\_input} coming from a specific application (e.g. MPlayer) to one or more \texttt{pa\_sink} associated with a speaker in every room.
+By default the audio is reproduced by only one \texttt{pa\_sink}, but according to needs, it's possible to playback sound from more speakers simultaneously.
 \subsection{Algorithm}
+The algorithm implemented determines which speaker has to playback sound according to person's location; we can suppose infact that the signal power detected by the bluetooth adapter is higher than the other RSSI values in the room where person is situated. The following pseudo-code shows how the algorithm works. The output returned represents the index of speakers/rooms where the sound has to be reproduced.
 
+Input variables:
+\begin{itemize}
+\item \textbf{Defer\_count}: time spent from inizialization to the request of available RSSI.
+\item \textbf{Expiry\_time}: if this threshold is exceeded the playback is forced to start, even if there aren't all data available. 
+\item \textbf{Current\_room}: location of the person in the current moment.
+\item \textbf{No\_null\_RSSI}: number of available RSSI values.
+\item \textbf{Adjacences\_map}: stores the adjacences between different rooms.
+\item \textbf{RSSI\_map}: associates to every BT adapter the RSSI value detected.
+\item \textbf{Min\_number\_RSSI}: min number of RSSI required to proceed with the sound playback. 
+\item \textbf{Max\_number\_speakers}: max number of speakers that can be activated simultanously.
+\end{itemize}
+\textbf{\underline{Choice algorithm:}}
+\vspace{0.3cm}
+\begin{algorithmic}[1]
+\STATE $defer\_count \gets 0$
+\STATE $current\_room \gets \mbox{Index room with max RSSI}$
+\IF {($no\_null\_RSSI \leq min\_number\_RSSI$ \textbf{and} $defer\_count \leq expiry\_time)$} 
+\STATE $defer\_count \gets defer\_count + 1$ 
+\STATE $\texttt{goto 1)}$  
+\ENDIF
+%\STATE $Switch on no\_null\_RSSi value:$
+\IF {$no\_null\_RSSI = 0$} \STATE $\texttt{pause}$ \ENDIF
+\IF {$no\_null\_RSSI = 1$} \RETURN \mbox{Index room corresponding to} $no\_null\_RSSI$\ENDIF
+\IF {$no\_null\_RSSI \geq 2$} \RETURN \mbox{(Index rooms corresponding} $no\_null\_RSSI)$ \mbox{\textbf{intersected with} (Index adjoining rooms to} $current\_room)$  \ENDIF
+\STATE $\texttt{goto 1)}$
+\end{algorithmic}
 
+\subsection{Tester}
 
 \section{Runtime behavior}
 \subsection{Configuration}
-\subsection{Monitoring}
+%\subsection{Monitoring}
 
 
 \section{Experiments Evaluation}
 
-\section{Problem handling}
+\subsection{Problem handling}
 
 \section{Future work and conclusion}
 The conclusion goes here.
