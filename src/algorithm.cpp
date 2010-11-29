@@ -1,41 +1,38 @@
-#include <limits>
 #include <QMap>
 
 #include "algorithm.h"
+#include "rssimodel.h"
 
 #define MAX_RETRIES 2
 #define MAX_SIMULTANEOUS_SPEAKERS 3
 
 
-Algorithm::Algorithm(QObject *parent) :
+Algorithm::Algorithm(const RssiModel *model, QObject *parent) :
     QObject(parent),
-    retryCount(0)
+    retryCount(0),
+    rssi(model)
 {
-    // TODO: adjRooms = Config::getFoo();
+    // TODO: adjRooms = Config::getAdj();
 }
 
 void Algorithm::chooseOutputs()
 {
     QHash<QString, QSet<QString> > newOutputs;
 
-    QHashIterator<QString, QHash<QString,int> > i(rssiMap);
-    while (i.hasNext()) {
-        i.next();
-
+    foreach (QString device, rssi->devices()) {
         //updateCurrentRoom()??
-        QString room = curRooms.value(i.key());
-        if (room.isEmpty())
+        QString curRoom = curRooms.value(device);
+        if (curRoom.isEmpty())
             continue;
 
         QSet<QString> results;
         QMap<int, QString> sorted;
 
         // sort rooms by RSSI
-        QHashIterator<QString, int> j(i.value());
-        while (j.hasNext()) {
-            j.next();
-            if (j.value() != InvalidRssi)
-                sorted[j.value()] = j.key();
+        foreach (QString room, adjRooms.uniqueKeys()) {
+            int r = rssi->rssi(device, room);
+            if (r != RssiModel::InvalidRssi)
+                sorted[r] = room;
         }
 
         // choose the rooms with highest RSSI
@@ -55,22 +52,14 @@ void Algorithm::chooseOutputs()
         retryCount = 0;
 
         // intersect chosen rooms with the rooms adjacent to the current one
-        results &= adjRooms.value(room);
+        results &= adjRooms.value(curRoom);
 
-        if (results != curOutputs.value(room)) {
-            curOutputs[room] = results;
-            newOutputs[room] = results;
+        if (results != curOutputs.value(curRoom)) {
+            curOutputs[curRoom] = results;
+            newOutputs[curRoom] = results;
         }
     }
 
     if (!newOutputs.isEmpty())
         emit outputsChanged(newOutputs);
 }
-
-void Algorithm::setRssi(const QString &probe, const QString &device, int rssi)
-{
-    qDebug("%s [%s] => %i", qPrintable(probe), qPrintable(device), rssi); // FIXME: for testing only!
-    rssiMap[device][probe] = rssi;
-}
-
-const int Algorithm::InvalidRssi = std::numeric_limits<int>::min();

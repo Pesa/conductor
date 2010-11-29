@@ -3,10 +3,10 @@
 
 #include <QMainWindow>
 
-class Algorithm;
+class QTimer;
 class PAController;
 class ProbeManager;
-class QTimer;
+class RssiModel;
 
 namespace Ui {
     class MainWindow;
@@ -30,9 +30,9 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    Algorithm *algo;
     PAController *controller;
     ProbeManager *probe;
+    RssiModel *rssi;
     QTimer *timer;
 };
 

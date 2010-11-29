@@ -5,23 +5,24 @@
 #include <QObject>
 #include <QSet>
 
+class RssiModel;
+
 class Algorithm : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit Algorithm(QObject *parent = 0);
+    explicit Algorithm(const RssiModel *model, QObject *parent = 0);
 
 public slots:
     void chooseOutputs();
-    void setRssi(const QString &probe, const QString &device, int rssi);
 
 signals:
     void outputsChanged(const QHash<QString, QSet<QString> > &outputs);
 
 private:
-    static const int InvalidRssi;
     int retryCount;
+    const RssiModel *rssi;
 
     /* map: room name => adjacent rooms */
     const QHash<QString, QSet<QString> > adjRooms;
@@ -31,9 +32,6 @@ private:
 
     /* map: device address => current room */
     QHash<QString, QString> curRooms;
-
-    /* map: device address => room name => RSSI */
-    QHash<QString, QHash<QString,int> > rssiMap;
 };
 
 #endif // ALGORITHM_H
