@@ -19,28 +19,22 @@ void Algorithm::chooseOutputs()
 {
     QHash<QString, QSet<QString> > newOutputs;
 
-    foreach (QString device, rssi->devices()) {
-        //updateCurrentRoom()??
-        QString curRoom = curRooms.value(device);
-        if (curRoom.isEmpty())
-            continue;
-
-        QSet<QString> results;
-        QMap<int, QString> sorted;
-
+    foreach (const QString &device, rssi->devices()) {
         // sort rooms by RSSI
-        foreach (QString room, adjRooms.uniqueKeys()) {
+        QMap<int, QString> sorted;
+        foreach (const QString &room, adjRooms.uniqueKeys()) {
             int r = rssi->rssi(device, room);
             if (r != RssiModel::InvalidRssi)
                 sorted[r] = room;
         }
 
         // choose the rooms with highest RSSI
+        QSet<QString> results;
         int n = 0;
-        foreach (QString s, sorted) {
+        foreach (const QString &room, sorted) {
             if (n >= MAX_SIMULTANEOUS_SPEAKERS)
                 break;
-            results << s;
+            results << room;
             ++n;
         }
 
@@ -51,12 +45,18 @@ void Algorithm::chooseOutputs()
         }
         retryCount = 0;
 
-        // intersect chosen rooms with the rooms adjacent to the current one
-        results &= adjRooms.value(curRoom);
+        QSet<QString> curRooms = curOutputs.value(device);
+        if (!curRooms.isEmpty()) {
+            // intersect chosen rooms with the rooms adjacent to the current ones
+            QSet<QString> neighbors;
+            foreach (const QString &room, curRooms)
+                neighbors += adjRooms.value(room);
+            results &= neighbors;
+        }
 
-        if (results != curOutputs.value(curRoom)) {
-            curOutputs[curRoom] = results;
-            newOutputs[curRoom] = results;
+        if (results != curRooms) {
+            curOutputs[device] = results;
+            newOutputs[device] = results;
         }
     }
 

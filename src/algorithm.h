@@ -29,9 +29,6 @@ private:
 
     /* map: device address => current output rooms */
     QHash<QString, QSet<QString> > curOutputs;
-
-    /* map: device address => current room */
-    QHash<QString, QString> curRooms;
 };
 
 #endif // ALGORITHM_H
