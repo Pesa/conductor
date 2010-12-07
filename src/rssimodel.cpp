@@ -1,12 +1,12 @@
 #include <limits>
 
+#include "config.h"
 #include "rssimodel.h"
 
 RssiModel::RssiModel(QObject *parent) :
-    QAbstractTableModel(parent)
+    QAbstractTableModel(parent),
+    _rooms(Config::probesAddresses().uniqueKeys())
 {
-    // TODO: _rooms = Config::getAdj().uniqueKeys();
-    _rooms << "Main room"; // FIXME
 }
 
 int RssiModel::columnCount(const QModelIndex &) const

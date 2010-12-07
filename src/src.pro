@@ -22,7 +22,8 @@ SOURCES += main.cpp \
     sinkmodel.cpp \
     probeinterface.cpp \
     probemanager.cpp \
-    rssimodel.cpp
+    rssimodel.cpp \
+    config.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -34,7 +35,8 @@ HEADERS += \
     sinkmodel.h \
     probeinterface.h \
     probemanager.h \
-    rssimodel.h
+    rssimodel.h \
+    config.h
 
 FORMS   += \
     mainwindow.ui

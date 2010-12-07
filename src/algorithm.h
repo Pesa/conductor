@@ -24,8 +24,8 @@ private:
     int retryCount;
     const RssiModel *rssi;
 
-    /* map: room name => adjacent rooms */
-    const QHash<QString, QSet<QString> > adjRooms;
+    /* map: room name => adjoining rooms */
+    QHash<QString, QSet<QString> > adjRooms;
 
     /* map: device address => current output rooms */
     QHash<QString, QSet<QString> > curOutputs;

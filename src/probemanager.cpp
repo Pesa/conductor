@@ -1,15 +1,14 @@
 #include <QxtSignalGroup>
 
+#include "config.h"
 #include "probemanager.h"
 #include "probeinterface.h"
 
-
 ProbeManager::ProbeManager(QObject *parent) :
     QObject(parent),
+    addrs(Config::probesAddresses()),
     group(new QxtSignalGroup(this))
 {
-    addrs["Main room"] = "127.0.0.1"; // FIXME: for testing only!
-
     QHashIterator<QString, QString> i(addrs);
     while (i.hasNext()) {
         i.next();

@@ -1,18 +1,15 @@
 #include <QMap>
 
 #include "algorithm.h"
+#include "config.h"
 #include "rssimodel.h"
-
-#define MAX_RETRIES 2
-#define MAX_SIMULTANEOUS_SPEAKERS 3
-
 
 Algorithm::Algorithm(const RssiModel *model, QObject *parent) :
     QObject(parent),
     retryCount(0),
-    rssi(model)
+    rssi(model),
+    adjRooms(Config::roomsTopology())
 {
-    // TODO: adjRooms = Config::getAdj();
 }
 
 void Algorithm::chooseOutputs()
@@ -32,14 +29,14 @@ void Algorithm::chooseOutputs()
         QSet<QString> results;
         int n = 0;
         foreach (const QString &room, sorted) {
-            if (n >= MAX_SIMULTANEOUS_SPEAKERS)
+            if (n >= Config::maxSimultaneousSpeakers())
                 break;
             results << room;
             ++n;
         }
 
         // wait a bit more if we don't have enough data
-        if (results.isEmpty() && retryCount < MAX_RETRIES) {
+        if (results.isEmpty() && retryCount < Config::maxRetries()) {
             ++retryCount;
             continue;
         }
@@ -47,7 +44,7 @@ void Algorithm::chooseOutputs()
 
         QSet<QString> curRooms = curOutputs.value(device);
         if (!curRooms.isEmpty()) {
-            // intersect chosen rooms with the rooms adjacent to the current ones
+            // intersect with rooms contiguous to the current ones
             QSet<QString> neighbors;
             foreach (const QString &room, curRooms)
                 neighbors += adjRooms.value(room);

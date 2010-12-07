@@ -1,6 +1,5 @@
 #include "probeinterface.h"
-
-#define RPC_PORT 1234
+#include "config.h"
 
 ProbeInterface::ProbeInterface(const QString &name, const QString &address, QObject *parent) :
     QxtRPCPeer(parent),
@@ -15,7 +14,7 @@ ProbeInterface::ProbeInterface(const QString &name, const QString &address, QObj
 
 void ProbeInterface::connect()
 {
-    QxtRPCPeer::connect(_addr, RPC_PORT);
+    QxtRPCPeer::connect(_addr, Config::rpcPort());
 }
 
 void ProbeInterface::disconnect()
