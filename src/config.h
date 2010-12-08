@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include <QHash>
+#include <QList>
 #include <QSet>
 #include <QString>
 
@@ -11,6 +12,7 @@ public:
     static int maxRetries() { return 2; }
     static int maxSimultaneousSpeakers() { return 3; }
     static QHash<QString, QString> probesAddresses();
+    static QList<QString> roomsNames();
     static QHash<QString, QSet<QString> > roomsTopology();
     static int rpcPort() { return 1234; }
 

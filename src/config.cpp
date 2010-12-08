@@ -7,6 +7,11 @@ QHash<QString, QString> Config::probesAddresses()
     return addrs;
 }
 
+QList<QString> Config::roomsNames()
+{
+    return probesAddresses().uniqueKeys();
+}
+
 QHash<QString, QSet<QString> > Config::roomsTopology()
 {
     QHash<QString, QSet<QString> > adj;

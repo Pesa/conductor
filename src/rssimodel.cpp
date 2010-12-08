@@ -5,7 +5,7 @@
 
 RssiModel::RssiModel(QObject *parent) :
     QAbstractTableModel(parent),
-    _rooms(Config::probesAddresses().uniqueKeys())
+    _rooms(Config::roomsNames())
 {
 }
 
