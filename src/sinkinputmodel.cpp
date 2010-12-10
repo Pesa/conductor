@@ -37,7 +37,7 @@ int SinkInputModel::rowCount(const QModelIndex &) const
 QVariant SinkInputModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole) {
-        SinkInput si = inputs->value(index.row());
+        SinkInput si = sinkInputAtRow(index.row());
         switch (index.column()) {
         case 0: return si.name();
         case 1: return clients->value(si.client(), tr("N/A"));
@@ -58,7 +58,7 @@ QVariant SinkInputModel::headerData(int section, Qt::Orientation orientation, in
             case 2: return tr("Sink #");
             }
         } else {
-            return inputs->value(section).index();
+            return sinkInputAtRow(section).index();
         }
     }
 

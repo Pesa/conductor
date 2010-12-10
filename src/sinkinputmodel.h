@@ -24,6 +24,8 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
+    SinkInput sinkInputAtRow(int row) const { return inputs->value(row); }
+
     bool populate(pa_context *c);
     void removeClient(uint32_t index);
     void removeSinkInput(uint32_t index);
