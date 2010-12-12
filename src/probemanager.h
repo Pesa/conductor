@@ -15,6 +15,8 @@ public:
     explicit ProbeManager(QObject *parent = 0);
     ~ProbeManager();
 
+    QByteArray addressOfProbe(const QString &probe) const { return addrs.value(probe).toLocal8Bit(); }
+
 public slots:
     void connectToProbes();
     void disconnectFromProbes();
