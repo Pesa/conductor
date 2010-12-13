@@ -18,9 +18,8 @@ public:
     explicit PAController(QObject *parent = 0);
     ~PAController();
 
-    bool combineSinks(const QList<uint32_t> &sinks, const QString &name = QString(),
-                      int adjustTime = -1, const QString &resampleMethod = QString());
     bool createTunnel(const QByteArray &server);
+    void moveSinkInput(const SinkInput &input, const QList<QByteArray> &speakers);
 
     SinkInputModel *modelForSinkInputs() { return inputModel; }
     SinkModel *modelForSinks() { return sinkModel; }
@@ -35,13 +34,18 @@ signals:
 
 private:
     static void combineCallback(pa_context *c, uint32_t idx, void *userdata);
+    static void moveCallback(pa_context *c, int success, void *userdata);
     static void stateCallback(pa_context *c, void *userdata);
     static void subscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
     static void tunnelCallback(pa_context *c, uint32_t idx, void *userdata);
 
+    void combineTunnels(const QList<QByteArray> &addresses, const QString &name = QString(),
+                        int adjustTime = -1, const QString &resampleMethod = QString());
+
     pa_context *context;
     pa_glib_mainloop *mainloop;
     QList<uint32_t> loadedModules;
+    uint32_t inputToBeMoved;
     SinkInputModel *inputModel;
     SinkModel *sinkModel;
 };
