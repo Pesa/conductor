@@ -4,6 +4,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "algorithm.h"
+#include "config.h"
 #include "pacontroller.h"
 #include "probemanager.h"
 #include "rssimodel.h"
@@ -22,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->sinkInputView->setModel(controller->modelForSinkInputs());
     ui->sinkView->setModel(controller->modelForSinks());
 
-    timer->setInterval(2000);
+    timer->setInterval(Config::updateInterval());
 
     Algorithm *algo = new Algorithm(rssi, this);
     connect(algo, SIGNAL(outputsChanged(QHash<QString,QSet<QString> >)), SLOT(onOutputsChanged(QHash<QString,QSet<QString> >)));
@@ -69,9 +70,29 @@ void MainWindow::monitor(bool enabled)
     }
 }
 
-void MainWindow::onOutputsChanged(const QHash<QString, QSet<QString> > &)
+void MainWindow::onOutputsChanged(const QHash<QString, QSet<QString> > &outputs)
 {
-    // TODO
+    // we support only one device for now
+    Q_ASSERT(outputs.size() == 1);
+
+    QModelIndexList selected = ui->sinkInputView->selectionModel()->selectedRows();
+    if (selected.isEmpty())
+        return;
+
+    // at most one row can be selected
+    Q_ASSERT(selected.size() == 1);
+
+    int row = selected.first().row();
+    SinkInput input = controller->modelForSinkInputs()->sinkInputAtRow(row);
+
+    foreach (const QSet<QString> &rooms, outputs) {
+        QList<QByteArray> addrs;
+        foreach (const QString &room, rooms)
+            addrs << probe->addressOfProbe(room);
+
+        // finally move the selected sink input to the chosen speakers
+        controller->moveSinkInput(input, addrs);
+    }
 }
 
 void MainWindow::onPAConnected(const QString &server, bool local)
@@ -80,6 +101,11 @@ void MainWindow::onPAConnected(const QString &server, bool local)
                 .arg(local ? tr("local") : tr("remote"))
                 .arg(server));
     statusBar()->showMessage(msg);
+
+    // create a tunnel sink towards each speaker
+    foreach (const QString &addr, Config::probesAddresses())
+        if (!controller->createTunnel(addr.toLocal8Bit()))
+            displayError(tr("failed to create tunnel sink for ") + addr);
 }
 
 void MainWindow::onProbeReady()
