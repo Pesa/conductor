@@ -45,7 +45,8 @@ private:
     pa_context *context;
     pa_glib_mainloop *mainloop;
     QByteArray combinedSinkName;
-    uint32_t combineModule;
+    uint32_t combineMod;
+    uint32_t oldCombineMod;
     uint32_t inputToBeMoved;
     SinkInputModel *inputModel;
     SinkModel *sinkModel;

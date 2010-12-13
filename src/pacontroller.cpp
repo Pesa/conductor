@@ -11,7 +11,8 @@
 
 PAController::PAController(QObject *parent) :
     QObject(parent),
-    combineModule(PA_INVALID_INDEX),
+    combineMod(PA_INVALID_INDEX),
+    oldCombineMod(PA_INVALID_INDEX),
     inputToBeMoved(PA_INVALID_INDEX),
     inputModel(new SinkInputModel(this)),
     sinkModel(new SinkModel(this))
@@ -25,8 +26,8 @@ PAController::~PAController()
 {
     /* unload all modules previously loaded by us */
     pa_operation *op;
-    if (combineModule != PA_INVALID_INDEX) {
-        if ((op = pa_context_unload_module(context, combineModule, NULL, NULL)))
+    if (combineMod != PA_INVALID_INDEX) {
+        if ((op = pa_context_unload_module(context, combineMod, NULL, NULL)))
             pa_operation_unref(op);
     }
     foreach (uint32_t idx, tunnelModules) {
@@ -183,7 +184,7 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
     }
 }
 
-void PAController::moveCallback(pa_context *, int success, void *userdata)
+void PAController::moveCallback(pa_context *c, int success, void *userdata)
 {
     PAController *self = static_cast<PAController*>(userdata);
 
@@ -191,6 +192,14 @@ void PAController::moveCallback(pa_context *, int success, void *userdata)
         emit self->warning(tr("failed to move stream #") + self->inputToBeMoved);
 
     self->inputToBeMoved = PA_INVALID_INDEX;
+
+    // unload unused module-combine
+    if (self->oldCombineMod != PA_INVALID_INDEX) {
+        pa_operation *op;
+        if ((op = pa_context_unload_module(c, self->oldCombineMod, NULL, NULL)))
+            pa_operation_unref(op);
+        self->oldCombineMod = PA_INVALID_INDEX;
+    }
 }
 
 void PAController::combineTunnels(const QList<QByteArray> &addresses, const QString &name,
@@ -230,11 +239,11 @@ void PAController::combineCallback(pa_context *c, uint32_t idx, void *userdata)
         return;
     }
 
-    self->combineModule = idx;
+    self->oldCombineMod = self->combineMod;
+    self->combineMod = idx;
 
     if (self->inputToBeMoved != PA_INVALID_INDEX) {
         pa_operation *op;
-
         if (!(op = pa_context_move_sink_input_by_name(c, self->inputToBeMoved, self->combinedSinkName,
                                                       PAController::moveCallback, self)))
             emit self->warning(tr("pa_context_move_sink_input_by_name() failed"));
