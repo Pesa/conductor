@@ -151,7 +151,7 @@ void PAController::tunnelCallback(pa_context *, uint32_t idx, void *userdata)
     PAController *self = static_cast<PAController*>(userdata);
 
     if (idx == PA_INVALID_INDEX) {
-        emit self->error("failed to load module-tunnel-sink");
+        // ignore any errors, the module might be already loaded
         return;
     }
 
