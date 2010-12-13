@@ -100,14 +100,6 @@ In every room there must be available:
 \item{a \textbf{speaker:}} it lets out sound when the associate bluetooth adapter is selected for playback.
 \end{itemize}
 
-%immagine con la architettura ad alto livello che mostra come interagiscono le componenti
-\begin{figure}[h]
-\centering
-\includegraphics[scale = 0.3]{architettura.pdf}
-\caption{Interaction between components}
-\label{arch}
-\end{figure}
-
 
 \subsection{Bluetooth module}
 The main component of the project is the Bluetooth module, that manages the RSSI values and communications between bluetooth hosts and device. It is based on a simple and very efficient application, named Probe and associated to every bluetooth host adapter, that is able to interface with \textbf{bluez} throught \textbf{d-bus}. In details, every bluetooth adapter is modeled by the class \texttt{ProbeInterface} that allows to manage a start or stop discovery request done by the device and to update the RSSI values when a change occurs. All the \texttt{ProbeInterface} objects are controlled by the class \texttt{ProbeManager} that monitors the device localization and stores the information about every \texttt{ProbeInterface} (e.g. the name room associated with the adapter).     
@@ -172,10 +164,16 @@ Input variables:
 %\subsection{Tester}
 %bisogna mettere che i dati sono precompilati, perchè non avevamo l'HW adatto che fornisse i lvalore di RSSI in seguito a d una inquiry.
 
-\section{Runtime behavior}
+\section{How the system work}
+\begin{figure}[h]
+\centering
+\includegraphics[scale = 0.3]{architettura.pdf}
+\caption{Interaction between components}
+\label{arch}
+\end{figure}
 
 \subsection{Configuration}
-Before starting the application it is necessary to setup some parameter in the configuration file. The information to provide are:
+Before starting the application it is necessary to setup some parameters in the configuration file. The information to provide are:
 \begin{itemize}
 \item \texttt{maxRetries}: it represents a threshold. When crossed the playback is forced to start. 
 \item \texttt{maxSimultaneousSpeakers}: the max number of speakers activated at the same time.
@@ -184,68 +182,41 @@ Before starting the application it is necessary to setup some parameter in the c
 \item \texttt{roomsTopology}: it describes the relative localization of each room. %respect to each other. 
 \end{itemize}
 
-\subsection{Monitoring}
-
+\subsection{Runtime behavior}
+%description about components interaction
+In this section we will describe the system runtime behavior, showing how different components can interact and how the RSSI values are used to control the audio stream.
+Periodically, through an inquiry, the Probes will obtain the RSSI values detected with respect the smartphone. If the difference between the new and the preceeding RSSI values is higher than a fixed threshold, the Probes transmit them to the main application on the central server. This operation is executed at regular intervals to estimate in which room the person with the device is. If this is different from the room in which the playback is currently running, this information is comunicated to the \texttt{PAController} and a request is sent to move the selected audio stream to the speaker associated with the new room. At this point there are two possible scenarios according to the number of speakers that have to be activated:
+\begin{itemize}
+\item one speaker: the audio stream is directly redirected to the respective tunnel;
+\item two or more speakers: it is necessary to load the combine-module (Pulseaudio module), that creates a virtual sink to reproduce the stream through all the connected sinks (slaves). 
+\end{itemize}  
 
 \section{Experiments Evaluation}
 
 \section{Future work and conclusion}
 Here we will explain some possible project extensions. 
 \subsection{Improve testing phase}
-Currently our application has been tested using an additional component that simulates the person movements. In detail it is a particular interface (a button) associated with each Probe application. By clicking it we can increase the RSSI value associated with the respective adapter and consequently decrease the RSSI values associated with the other adapters. However being only a simulation, the behavior doesn't match totally with the real one.  
+Currently our application has been tested using an additional component that simulates the person movements. In detail it is a particular interface (a button) associated with each Probe application. By clicking it we can increase the RSSI value associated with the respective adapter and consequently decrease the RSSI values associated with the other adapters. However being only a simulation, the behavior doesn't totally match  with the real one. To improve the coherence and the reliability of test results it should use an hardware with specific requirements. It should arrange for each rooms, in the apartment, a bluetooth adapter that should be able to reply to an inquiry request providing the RSSI value detected. So with the complete list of RSSI it is possible to run the algorithm with true values and choose where the playback can start.   
 \subsection{Multiple devices}
-Although an assumption of the present project is the identification of a single smartphone. It would be important to allow the application to support and manage multiple devices. This entails the necessity to consider how different devices could interact and interfere between them.       
-\subsection{``Mixer'': Application on device}
-In our project the main application runs in the central server. The device (smartphone) is only used to localize the person. It would be interesting to develop an application for the smartphone to give the user a certain control on the audio stream. For instance with this new feature the person should be able to regulate the volume and to stop the playback. A further improvement could be an interface to navigate through the playlist, i.e. choose a specific song or skip to the previous/next track.  
-
-
-% conference papers do not normally have an appendix
-
-
-% use section* for acknowledgement
-%\section*{Acknowledgment}
-
-
-%The authors would like to thank...
+Although an assumption of the present project is the identification of a single smartphone, it would be important to allow the application to support and manage multiple devices. This entails the necessity to consider how different devices could interact and interfere between them.       
+\subsection{``Mixer'': application on device}
+In our project the main application runs in the central server and the device (smartphone) is only used to localize the person. It would be interesting to develop an application for the smartphone to give the user a certain control on the audio stream. For instance with this new feature the person should be able to regulate the volume and to stop the playback. A further improvement could be an interface to navigate through the playlist, i.e. choose a specific song or skip to the previous/next track.  
 
 
 
 
-
-% trigger a \newpage just before the given reference
-% number - used to balance the columns on the last page
-% adjust value as needed - may need to be readjusted if
-% the document is modified later
-%\IEEEtriggeratref{8}
-% The "triggered" command can be changed if desired:
-%\IEEEtriggercmd{\enlargethispage{-5in}}
-
-% references section
-
-% can use a bibliography generated by BibTeX as a .bbl file
-% BibTeX documentation can be easily obtained at:
-% http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
-% The IEEEtran BibTeX style support page is at:
-% http://www.michaelshell.org/tex/ieeetran/bibtex/
-%\bibliographystyle{IEEEtran}
-% argument is your BibTeX string definitions and bibliography database(s)
-%\bibliography{IEEEabrv,../bib/paper}
-%
-% <OR> manually copy in the resultant .bbl file
-% set second argument of \begin to the number of references
-% (used to reserve space for the reference number labels box)
 \begin{thebibliography}{1}
 \bibitem{Pulseaudio} 
 		PulseAudio Sound Server, 
 		\url{http://www.pulseaudio.org/}
+\bibitem{PulseaudioDoc}
+		PulseAudio documentation
+		\url{http://0pointer.de/lennart/projects/pulseaudio/doxygen/}
 \bibitem{Bluez} 
 		BlueZ: Official Linux Bluetooth protocol stack, 
 		\url{http://www.bluez.org/}
 
 
-%\bibitem{IEEEhowto:kopka}
-%H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
- % 0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
 
 \end{thebibliography}
 
