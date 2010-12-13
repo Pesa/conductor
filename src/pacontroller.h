@@ -18,7 +18,7 @@ public:
     explicit PAController(QObject *parent = 0);
     ~PAController();
 
-    bool createTunnel(const QByteArray &server);
+    void createTunnel(const QByteArray &server);
     void moveSinkInput(const SinkInput &input, const QList<QByteArray> &speakers);
 
     SinkInputModel *modelForSinkInputs() { return inputModel; }
@@ -44,10 +44,12 @@ private:
 
     pa_context *context;
     pa_glib_mainloop *mainloop;
-    QList<uint32_t> loadedModules;
+    QByteArray combinedSinkName;
+    uint32_t combineModule;
     uint32_t inputToBeMoved;
     SinkInputModel *inputModel;
     SinkModel *sinkModel;
+    QList<uint32_t> tunnelModules;
 };
 
 #endif // PACONTROLLER_H

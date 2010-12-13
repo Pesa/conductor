@@ -104,8 +104,7 @@ void MainWindow::onPAConnected(const QString &server, bool local)
 
     // create a tunnel sink towards each speaker
     foreach (const QString &addr, Config::probesAddresses())
-        if (!controller->createTunnel(addr.toLocal8Bit()))
-            displayError(tr("failed to create tunnel sink for ") + addr);
+        controller->createTunnel(addr.toLocal8Bit());
 }
 
 void MainWindow::onProbeReady()

@@ -55,6 +55,6 @@ void ProbeInterface::onDisconnected()
 
 void ProbeInterface::onError(QAbstractSocket::SocketError errorCode)
 {
-    qWarning("ProbeInterface '%s': socket error %i", qPrintable(_name), errorCode);
+    qCritical("ProbeInterface '%s': socket error %i", qPrintable(_name), errorCode);
     emit error(_name);
 }
