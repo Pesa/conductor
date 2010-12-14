@@ -19,9 +19,14 @@ int RssiModel::rowCount(const QModelIndex &) const
     return _devices.count();
 }
 
+Qt::ItemFlags RssiModel::flags(const QModelIndex &index) const
+{
+    return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+}
+
 QVariant RssiModel::data(const QModelIndex &index, int role) const
 {
-    if (role == Qt::DisplayRole) {
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
         QString dev = _devices.at(index.row());
         QString room = _rooms.at(index.column());
         int val = rssi(dev, room);
@@ -46,6 +51,28 @@ QVariant RssiModel::headerData(int section, Qt::Orientation orientation, int rol
     }
 
     return QVariant();
+}
+
+bool RssiModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (index.isValid() && role == Qt::EditRole) {
+        int i;
+        bool ok = false;
+        if (value.toString().isEmpty() || value.toString() == "-") {
+            i = InvalidRssi;
+            ok = true;
+        } else {
+            i = value.toInt(&ok);
+        }
+
+        if (ok) {
+            rssiMap[_devices.at(index.row())][_rooms.at(index.column())] = i;
+            emit dataChanged(index, index);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void RssiModel::addDevice(const QString &device)
