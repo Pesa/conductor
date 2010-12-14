@@ -27,11 +27,14 @@ void Algorithm::chooseOutputs()
 
         // choose the rooms with highest RSSI
         QSet<QString> results;
+        QMapIterator<int, QString> i(sorted);
         int n = 0;
-        foreach (const QString &room, sorted) {
+        i.toBack();
+        while (i.hasPrevious()) {
+            i.previous();
             if (n >= Config::maxSimultaneousSpeakers())
                 break;
-            results << room;
+            results << i.value();
             ++n;
         }
 
@@ -45,10 +48,10 @@ void Algorithm::chooseOutputs()
         QSet<QString> curRooms = curOutputs.value(device);
         if (!curRooms.isEmpty()) {
             // intersect with rooms contiguous to the current ones
-            QSet<QString> neighbors;
+            QSet<QString> neighbors = curRooms;
             foreach (const QString &room, curRooms)
-                neighbors += adjRooms.value(room);
-            results &= neighbors;
+                neighbors.unite(adjRooms.value(room));
+            results.intersect(neighbors);
         }
 
         if (results != curRooms) {
