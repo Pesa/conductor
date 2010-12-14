@@ -31,9 +31,9 @@ QVariant RssiModel::data(const QModelIndex &index, int role) const
         QString room = _rooms.at(index.column());
         int val = rssi(dev, room);
         if (val == InvalidRssi)
-            return QVariant("-");
+            return QString("-");
         else
-            return QVariant(val);
+            return QString::number(val);
     } else if (role == Qt::TextAlignmentRole) {
         return QVariant(Qt::AlignCenter);
     }
