@@ -5,6 +5,7 @@
 
 RssiModel::RssiModel(QObject *parent) :
     QAbstractTableModel(parent),
+    _editable(false),
     _rooms(Config::roomsNames())
 {
 }
@@ -21,7 +22,11 @@ int RssiModel::rowCount(const QModelIndex &) const
 
 Qt::ItemFlags RssiModel::flags(const QModelIndex &index) const
 {
-    return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    Qt::ItemFlags itemFlags = QAbstractTableModel::flags(index);
+    if (_editable)
+        itemFlags |= Qt::ItemIsEditable;
+
+    return itemFlags;
 }
 
 QVariant RssiModel::data(const QModelIndex &index, int role) const

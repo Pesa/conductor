@@ -18,7 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     probe(new ProbeManager(this)),
     rssi(new RssiModel(this)),
     proxy(new StreamProxyModel(this)),
-    timer(new QTimer(this))
+    timer(new QTimer(this)),
+    ready(false)
 {
     ui->setupUi(this);
     ui->rssiView->setModel(rssi);
@@ -50,6 +51,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(probe, SIGNAL(rssiChanged(QString,QString,int)), rssi, SLOT(setRssi(QString,QString,int)));
     connect(timer, SIGNAL(timeout()), algo, SLOT(chooseOutputs()));
     connect(ui->monitorButton, SIGNAL(clicked(bool)), SLOT(monitor(bool)));
+    connect(ui->testMode, SIGNAL(toggled(bool)), SLOT(onTestModeToggled(bool)));
+    connect(ui->testMode, SIGNAL(toggled(bool)), rssi, SLOT(setEditable(bool)));
 
     // schedule delayed initialization of PAController and ProbeManager
     // (note: these slots will be invoked as soon as the control returns to Qt event loop)
@@ -75,6 +78,9 @@ void MainWindow::displayWarning(const QString &msg)
 void MainWindow::monitor(bool enabled)
 {
     ui->address->setEnabled(!enabled);
+    ui->stream->setEnabled(!enabled);
+    ui->testMode->setEnabled(!enabled);
+
     QString device = ui->address->text().toUpper();
     if (enabled) {
         rssi->addDevice(device);
@@ -123,5 +129,11 @@ void MainWindow::onPAConnected(const QString &server, bool local)
 
 void MainWindow::onProbeReady()
 {
+    ready = true;
     ui->monitorButton->setEnabled(true);
+}
+
+void MainWindow::onTestModeToggled(bool checked)
+{
+    ui->monitorButton->setEnabled(checked || ready);
 }

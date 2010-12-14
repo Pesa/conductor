@@ -27,9 +27,13 @@ public:
     static const int InvalidRssi;
 
 public slots:
+    void setEditable(bool editable) { _editable = editable; }
     void setRssi(const QString &probe, const QString &device, int rssi);
 
 private:
+    /* is the model editable? */
+    bool _editable;
+
     /* addresses of devices */
     QStringList _devices;
 

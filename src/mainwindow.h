@@ -28,6 +28,7 @@ private slots:
     void onOutputsChanged(const QHash<QString, QSet<QString> > &outputs);
     void onPAConnected(const QString &server, bool local);
     void onProbeReady();
+    void onTestModeToggled(bool checked);
 
 private:
     Ui::MainWindow *ui;
@@ -36,6 +37,7 @@ private:
     RssiModel *rssi;
     StreamProxyModel *proxy;
     QTimer *timer;
+    bool ready;
 };
 
 #endif // MAINWINDOW_H
