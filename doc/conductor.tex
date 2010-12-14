@@ -17,15 +17,6 @@
 	Corso di Laurea Magistrale in Informatica \\
 	\{dpesaven,mastegno\}@studenti.math.unipd.it
 }
-%\author{\IEEEauthorblockN{Davide Pesavento}
-%\IEEEauthorblockA{Universit\`{a} degli Studi di Padova\\
-%Corso di Laurea Magistrale in Informatica\\
-%Email: email@studenti.math.unipd.it}
-%\and
-%\IEEEauthorblockN{Martina Astegno}
-%\IEEEauthorblockA{Universit\`{a} degli Studi di Padova\\
-%Corso di Laurea Magistrale in Informatica\\
-%Email: martina.astegno@studenti.unipd.it}}
 
 \maketitle
 
@@ -37,19 +28,7 @@ In this paper we present a prototype application that shows how the Bluetooth te
 Bluetooth, BlueZ, DBus, PulseAudio, audio routing, smartphone.
 \end{IEEEkeywords}
 
-
-% For peer review papers, you can put extra information on the cover
-% page as needed:
-% \ifCLASSOPTIONpeerreview
-% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
-% \fi
-%
-% For peerreview papers, this IEEEtran command inserts a page break and
-% creates the second title. It will be ignored for other modes.
 \IEEEpeerreviewmaketitle
-
-
-%\hfill October 16, 2010
 
 \section{Introduction}
 \subsection{Bluetooth technology}
@@ -75,9 +54,6 @@ Current versions of BlueZ consist of many separate modules:
 \item Protocol decoding and analysis tools
 \end{itemize}
 
-
-
-
 \subsection{PulseAudio Server}
 PulseAudio is a sound server for POSIX and Win32 systems. A sound server is basically a proxy for sound applications. It allows to do advanced operations on sound data as it passes between an application and the hardware. Things like transferring the audio to a different machine, changing the sample format or channel count and mixing several sounds into one are easily achieved using a sound server. In this context the main functionalities used are the audio stream control, to transfer the sound between different speakers according to the person movement and the simoultaneously playback from two or more speakers.
 
@@ -100,21 +76,21 @@ Inside each room there must be available:
 The main component of the system is the Bluetooth module, that manages the RSSI values and communications between Bluetooth hosts and device. It is based on a simple and efficient application, named \texttt{probe} and associated to every Bluetooth adapter, that is able to interface with \textbf{BlueZ} through \textbf{DBus}. In detail, every Bluetooth adapter is modeled by the class \texttt{ProbeInterface}, that allows to start and stop a discovery done by the device and to update the RSSI values when a change occurs. All \texttt{ProbeInterface} objects are controlled by the class \texttt{ProbeManager} that monitors the device localization and stores the information about every \texttt{ProbeInterface} (e.g. the room name associated with the adapter).
 
 \subsection{Pulseaudio module}
-The PulseAudio daemon exposes two data structures in which our application is interested.
+The PulseAudio daemon exposes two data structures in which our application is interested:
 \begin{itemize}
-\item \texttt{pa\_sink}:
-\item \texttt{pa\_sink\_input}:
+\item \texttt{pa\_sink}: it represents an ``exit point'' where the audio stream can be redirected;
+\item \texttt{pa\_sink\_input}: it identifies a stream audio produced by a certain application.
 \end{itemize}
 
 To control and monitor the PulseAudio operations we implemented the class \texttt{PAController}. There are three main methods:
 \begin{itemize}
 \item \texttt{PAController::createTunnel(QByteArray)}
 \item \texttt{PAController::moveSinkInput(SinkInput, QList<QByteArray>)}
-\item \texttt{PAController::combineTunnels(QList<QByteArray>, QString, int, QString}
+\item \texttt{PAController::combineTunnels(QList \\
+<QByteArray>, QString, int, QString}
 \end{itemize}
 The first method allows to create a sink that acts as tunnel connection with the server specified in the parameter in which it's running a PulseAudio daemon. This operation is done loading a particular module called \texttt{module-tunnel-sink}. When it's available the complete list of sinks, we can redirect the \texttt{pa\_sink\_input} coming from a specific application (e.g. MPlayer) to one or more sinks associated with a speaker in each room. In detail to realize this movement we implemented the second method, \texttt{moveSinkInput()}, that redirects the \texttt{SinkInput} specified in this first parameter to the speakers contained in the second one.
 By default the audio is reproduced by only one \texttt{pa\_sink}. With the third method it is possible to playback sound through more speakers simultaneously, loading the PulseAudio \texttt{module-combine} that combines more objects \texttt{pa\_sink} creating a new sink with a specified identifier.
-
 
 \subsection{Algorithm}
 The implemented algorithm chooses which speaker has to playback sound according to person's location; we can suppose infact that the signal power detected by the Bluetooth adapter is higher than the other RSSI values in the room where person is situated. The following pseudo-code shows how the algorithm works. The output returned represents the index of speakers/rooms where the sound has to be reproduced.
@@ -177,7 +153,7 @@ Before starting the application it is necessary to setup some parameters in the 
 \item \texttt{probesAddresses}: the IP addresses of Probes associated with each room.
 \item \texttt{roomsNames}: the names associated with each room.
 \item \texttt{roomsTopology}: it describes the relative localization of each room. %respect to each other.
-\item \texttt{updateInterval}: it represents the time interval (in milliseconds) the algorithm is executed. 
+\item \texttt{updateInterval}: it represents an amount of time (milliseconds) after which the algorithm is repeated in a cyclic way. 
 \end{itemize}
 
 \subsection{Runtime behavior}
