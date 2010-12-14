@@ -20,6 +20,7 @@ SOURCES += main.cpp \
     sinkinput.cpp \
     sink.cpp \
     sinkmodel.cpp \
+    streamproxymodel.cpp \
     probeinterface.cpp \
     probemanager.cpp \
     rssimodel.cpp \
@@ -33,6 +34,7 @@ HEADERS += \
     sinkinput.h \
     sink.h \
     sinkmodel.h \
+    streamproxymodel.h \
     probeinterface.h \
     probemanager.h \
     rssimodel.h \

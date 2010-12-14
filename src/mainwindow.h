@@ -7,6 +7,7 @@ class QTimer;
 class PAController;
 class ProbeManager;
 class RssiModel;
+class StreamProxyModel;
 
 namespace Ui {
     class MainWindow;
@@ -33,6 +34,7 @@ private:
     PAController *controller;
     ProbeManager *probe;
     RssiModel *rssi;
+    StreamProxyModel *proxy;
     QTimer *timer;
 };
 

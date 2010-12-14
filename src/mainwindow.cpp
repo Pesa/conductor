@@ -8,6 +8,7 @@
 #include "pacontroller.h"
 #include "probemanager.h"
 #include "rssimodel.h"
+#include "streamproxymodel.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -16,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
     controller(new PAController(this)),
     probe(new ProbeManager(this)),
     rssi(new RssiModel(this)),
+    proxy(new StreamProxyModel(this)),
     timer(new QTimer(this))
 {
     ui->setupUi(this);
@@ -23,11 +25,24 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->sinkInputView->setModel(controller->modelForSinkInputs());
     ui->sinkView->setModel(controller->modelForSinks());
 
+    // setup the combo box for audio stream selection:
+    //   1. set the model
+    proxy->setSourceModel(controller->modelForSinkInputs());
+    ui->stream->setModel(proxy);
+    //   2. set the view
+    QTableView *view = new QTableView;
+    view->setSelectionBehavior(QAbstractItemView::SelectRows);
+    view->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->stream->setView(view);
+
+    // configure the timer interval
     timer->setInterval(Config::updateInterval());
 
+    // initialize the main algorithm
     Algorithm *algo = new Algorithm(rssi, this);
     connect(algo, SIGNAL(outputsChanged(QHash<QString,QSet<QString> >)), SLOT(onOutputsChanged(QHash<QString,QSet<QString> >)));
 
+    // connect signals and slots
     connect(controller, SIGNAL(error(QString)), SLOT(displayError(QString)));
     connect(controller, SIGNAL(warning(QString)), SLOT(displayWarning(QString)));
     connect(controller, SIGNAL(connected(QString,bool)), SLOT(onPAConnected(QString,bool)));
@@ -36,6 +51,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), algo, SLOT(chooseOutputs()));
     connect(ui->monitorButton, SIGNAL(clicked(bool)), SLOT(monitor(bool)));
 
+    // schedule delayed initialization of PAController and ProbeManager
+    // (note: these slots will be invoked as soon as the control returns to Qt event loop)
     QTimer::singleShot(0, controller, SLOT(connectToDaemon()));
     QTimer::singleShot(0, probe, SLOT(connectToProbes()));
 }
@@ -75,14 +92,11 @@ void MainWindow::onOutputsChanged(const QHash<QString, QSet<QString> > &outputs)
     // we support only one device for now
     Q_ASSERT(outputs.size() == 1);
 
-    QModelIndexList selected = ui->sinkInputView->selectionModel()->selectedRows();
-    if (selected.isEmpty())
+    // figure out which stream has been selected through the combo box
+    int idx = ui->stream->currentIndex();
+    if (idx < 0)
         return;
-
-    // at most one row can be selected
-    Q_ASSERT(selected.size() == 1);
-
-    int row = selected.first().row();
+    int row = proxy->mapToSource(proxy->index(idx, 0)).row();
     SinkInput input = controller->modelForSinkInputs()->sinkInputAtRow(row);
 
     foreach (const QSet<QString> &rooms, outputs) {
