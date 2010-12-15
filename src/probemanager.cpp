@@ -9,7 +9,7 @@ ProbeManager::ProbeManager(QObject *parent) :
     addrs(Config::probesAddresses()),
     group(new QxtSignalGroup(this))
 {
-    QHashIterator<QString, QString> i(addrs);
+    QHashIterator<QString, QByteArray> i(addrs);
     while (i.hasNext()) {
         i.next();
         ProbeInterface *probe = new ProbeInterface(i.key(), i.value());

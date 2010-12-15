@@ -123,8 +123,8 @@ void MainWindow::onPAConnected(const QString &server, bool local)
     statusBar()->showMessage(msg);
 
     // create a tunnel sink towards each speaker
-    foreach (const QString &addr, Config::probesAddresses())
-        controller->createTunnel(addr.toLocal8Bit());
+    foreach (const QByteArray &addr, Config::probesAddresses())
+        controller->createTunnel(addr);
 }
 
 void MainWindow::onProbeReady()

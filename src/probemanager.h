@@ -15,7 +15,7 @@ public:
     explicit ProbeManager(QObject *parent = 0);
     ~ProbeManager();
 
-    QByteArray addressOfProbe(const QString &probe) const { return addrs.value(probe).toLocal8Bit(); }
+    QByteArray addressOfProbe(const QString &probe) const { return addrs.value(probe); }
 
 public slots:
     void connectToProbes();
@@ -29,7 +29,7 @@ signals:
 
 private:
     /* map: room name => probe IP address */
-    QHash<QString, QString> addrs;
+    QHash<QString, QByteArray> addrs;
 
     /* map: room name => probe RPC interface */
     QHash<QString, ProbeInterface*> probes;

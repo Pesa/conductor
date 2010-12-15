@@ -1,9 +1,10 @@
 #include "config.h"
 
-QHash<QString, QString> Config::probesAddresses()
+QHash<QString, QByteArray> Config::probesAddresses()
 {
-    QHash<QString, QString> addrs;
-    addrs["room A"] = "127.0.0.1";
+    QHash<QString, QByteArray> addrs;
+    addrs["room A"] = "192.168.1.10";
+    addrs["room B"] = "192.168.1.11";
     return addrs;
 }
 
@@ -15,6 +16,14 @@ QList<QString> Config::roomsNames()
 QHash<QString, QSet<QString> > Config::roomsTopology()
 {
     QHash<QString, QSet<QString> > adj;
-    adj["room A"] = QSet<QString>();
+
+    QSet<QString> roomA;
+    roomA << "room B";
+    adj["room A"] = roomA;
+
+    QSet<QString> roomB;
+    roomB << "room A";
+    adj["room B"] = roomB;
+
     return adj;
 }
