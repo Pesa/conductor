@@ -137,7 +137,7 @@ Input variables:
 %\subsection{Tester}
 %bisogna mettere che i dati sono precompilati, perchè non avevamo l'HW adatto che fornisse i lvalore di RSSI in seguito a d una inquiry.
 
-\section{How the system work}
+\section{Operating system}
 \begin{figure}[h]
 \centering
 \includegraphics[scale = 0.3]{architettura.pdf}
@@ -148,7 +148,7 @@ Input variables:
 \subsection{Configuration}
 Before starting the application it is necessary to setup some parameters in the configuration file. The information to provide are:
 \begin{itemize}
-\item \texttt{maxRetries}: a threshold, when exceeded the playback is stopped.
+\item \texttt{maxRetries}: a threshold useful when the device is out of range to decide if the playback has to be stopped or not.
 \item \texttt{maxSimultaneousSpeakers}: the maximum number of speakers activated at the same time.
 \item \texttt{probesAddresses}: the IP addresses of Probes associated with each room.
 \item \texttt{roomsNames}: the names associated with each room.
@@ -166,6 +166,7 @@ Periodically, through an inquiry, the Probes will obtain the RSSI values detecte
 \end{itemize}
 
 \section{Experiments Evaluation}
+To verify the correct system functioning we executed some tests in a simulated environment.
 
 \section{Future work and conclusion}
 Here we will explain some possible project extensions.
