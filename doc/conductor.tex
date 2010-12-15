@@ -97,8 +97,8 @@ The implemented algorithm chooses which speaker has to playback sound according 
 
 Input variables:
 \begin{itemize}
-\item \textbf{retryCount}: the time spent from inizialization to the request of available RSSIs.
-\item \textbf{maxRetries}: the threshold that when exceeded the playback is forced to start, even if there aren't all data available.
+\item \textbf{retryCount}: it's a counter used to delay playback interruption in case the device is temporarily out of range.
+\item \textbf{maxRetries}: the threshold for the above counter, when exceeded the playback is stopped.
 %\item \textbf{sortedRssi}: the map with every devices, sorted by the RSSI value associated with each ones.
 \item \textbf{curRooms}: it's a set that contains the addresses of rooms in which the playback occurs in the current moment.
 %\item \textbf{No\_null\_RSSI}: number of available RSSI values.
@@ -148,8 +148,8 @@ Input variables:
 \subsection{Configuration}
 Before starting the application it is necessary to setup some parameters in the configuration file. The information to provide are:
 \begin{itemize}
-\item \texttt{maxRetries}: it represents a threshold. When crossed the playback is forced to start.
-\item \texttt{maxSimultaneousSpeakers}: the max number of speakers activated at the same time.
+\item \texttt{maxRetries}: a threshold, when exceeded the playback is stopped.
+\item \texttt{maxSimultaneousSpeakers}: the maximum number of speakers activated at the same time.
 \item \texttt{probesAddresses}: the IP addresses of Probes associated with each room.
 \item \texttt{roomsNames}: the names associated with each room.
 \item \texttt{roomsTopology}: it describes the relative localization of each room. %respect to each other.
