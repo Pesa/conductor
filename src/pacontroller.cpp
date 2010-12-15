@@ -138,10 +138,11 @@ void PAController::createTunnel(const QByteArray &server)
     if (server.trimmed().isEmpty())
         return;
 
+    /* build the list of arguments to module-tunnel-sink */
     QByteArray args = server.trimmed().prepend("server=");
     pa_operation *op;
-    
-	/* load the module-tunnel-sink available in Pulseaudio*/
+
+    /* load module-tunnel-sink */
     if (!(op = pa_context_load_module(context, "module-tunnel-sink", args, PAController::tunnelCallback, this)))
         emit error(tr("pa_context_load_module(tunnel-sink) failed"));
     else
@@ -166,7 +167,7 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
         return;
 
     inputToBeMoved = input.index();
-	/*check the number of speakers activated for the playback*/
+
     if (speakers.count() == 1) {
         QByteArray sink = speakers.first().trimmed().prepend("tunnel.");
         pa_operation *op;
@@ -177,7 +178,7 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
         else
             pa_operation_unref(op);
     } else {
-    	/* speakers are more than one and so the combine-module has to be loaded*/
+        /* if > 1 speakers have been chosen, we have to combine all of them using combineTunnels() */
         combinedSinkName = "combined";
         foreach (const QByteArray &addr, speakers)
             combinedSinkName += addr.trimmed().prepend('_');
@@ -195,7 +196,7 @@ void PAController::moveCallback(pa_context *c, int success, void *userdata)
 
     self->inputToBeMoved = PA_INVALID_INDEX;
 
-    // unload unused module-combine
+    /* unload unused module-combine */
     if (self->oldCombineMod != PA_INVALID_INDEX) {
         pa_operation *op;
         if ((op = pa_context_unload_module(c, self->oldCombineMod, NULL, NULL)))
@@ -226,6 +227,7 @@ void PAController::combineTunnels(const QList<QByteArray> &addresses, const QStr
     QByteArray args = arglist.join(" ").toLocal8Bit();
     pa_operation *op;
 
+    /* load module-combine */
     if (!(op = pa_context_load_module(context, "module-combine", args, PAController::combineCallback, this)))
         emit warning(tr("pa_context_load_module(combine) failed"));
     else
