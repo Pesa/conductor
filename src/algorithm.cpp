@@ -25,20 +25,22 @@ void Algorithm::chooseOutputs()
                 sorted[r] = room;
         }
 
-        // choose the rooms with highest RSSI (limited to the first maxSimultaneousSpeakers) 
+        // choose the rooms with highest RSSI
         QSet<QString> results;
         QMapIterator<int, QString> i(sorted);
         int n = 0;
         i.toBack();
         while (i.hasPrevious()) {
             i.previous();
+            // consider at most a number of speakers equal to maxSimultaneousSpeakers
             if (n >= Config::maxSimultaneousSpeakers())
                 break;
             results << i.value();
             ++n;
         }
 
-        // wait a bit more if we don't have enough data
+        // wait a bit more if we don't have enough data, the monitored
+        // device might have temporarily fallen out of range
         if (results.isEmpty() && retryCount < Config::maxRetries()) {
             ++retryCount;
             continue;
@@ -53,13 +55,15 @@ void Algorithm::chooseOutputs()
                 neighbors.unite(adjRooms.value(room));
             results.intersect(neighbors);
         }
-		// update only if new outputs differ from the current ones
+
+        // update only if new outputs differ from the current ones
         if (results != curRooms) {
             curOutputs[device] = results;
             newOutputs[device] = results;
         }
     }
 
+    // notify new outputs
     if (!newOutputs.isEmpty())
         emit outputsChanged(newOutputs);
 }
