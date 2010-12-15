@@ -77,20 +77,34 @@ void MainWindow::displayWarning(const QString &msg)
 
 void MainWindow::monitor(bool enabled)
 {
-    ui->address->setEnabled(!enabled);
-    ui->stream->setEnabled(!enabled);
-    ui->testMode->setEnabled(!enabled);
-
     QString device = ui->address->text().toUpper();
+    int idx = ui->stream->currentIndex();
+
     if (enabled) {
+        if (device.isEmpty() || idx < 0) {
+            ui->monitorButton->setChecked(false);
+            return;
+        }
+
+        // figure out which sink input has been selected through the combo box
+        int row = proxy->mapToSource(proxy->index(idx, 0)).row();
+        input = controller->modelForSinkInputs()->sinkInputAtRow(row);
+
+        // start monitoring
         rssi->addDevice(device);
         probe->startMonitoring(device);
         timer->start();
     } else {
+        // stop monitoring
         timer->stop();
         probe->stopMonitoring(device);
         rssi->removeDevice(device);
     }
+
+    // enable/disable some UI widgets
+    ui->address->setEnabled(!enabled);
+    ui->stream->setEnabled(!enabled);
+    ui->testMode->setEnabled(!enabled);
 }
 
 void MainWindow::onOutputsChanged(const QHash<QString, QSet<QString> > &outputs)
@@ -98,19 +112,12 @@ void MainWindow::onOutputsChanged(const QHash<QString, QSet<QString> > &outputs)
     // we support only one device for now
     Q_ASSERT(outputs.size() == 1);
 
-    // figure out which stream has been selected through the combo box
-    int idx = ui->stream->currentIndex();
-    if (idx < 0)
-        return;
-    int row = proxy->mapToSource(proxy->index(idx, 0)).row();
-    SinkInput input = controller->modelForSinkInputs()->sinkInputAtRow(row);
-
     foreach (const QSet<QString> &rooms, outputs) {
         QList<QByteArray> addrs;
         foreach (const QString &room, rooms)
             addrs << probe->addressOfProbe(room);
 
-        // finally move the selected sink input to the chosen speakers
+        // move the selected sink input to the current output speakers
         controller->moveSinkInput(input, addrs);
     }
 }

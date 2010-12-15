@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "sinkinput.h"
+
 class QTimer;
 class PAController;
 class ProbeManager;
@@ -36,6 +38,7 @@ private:
     ProbeManager *probe;
     RssiModel *rssi;
     StreamProxyModel *proxy;
+    SinkInput input;
     QTimer *timer;
     bool ready;
 };
