@@ -140,7 +140,8 @@ void PAController::createTunnel(const QByteArray &server)
 
     QByteArray args = server.trimmed().prepend("server=");
     pa_operation *op;
-
+    
+	/* load the module-tunnel-sink available in Pulseaudio*/
     if (!(op = pa_context_load_module(context, "module-tunnel-sink", args, PAController::tunnelCallback, this)))
         emit error(tr("pa_context_load_module(tunnel-sink) failed"));
     else
@@ -165,7 +166,7 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
         return;
 
     inputToBeMoved = input.index();
-
+	/*check the number of speakers activated for the playback*/
     if (speakers.count() == 1) {
         QByteArray sink = speakers.first().trimmed().prepend("tunnel.");
         pa_operation *op;
@@ -176,6 +177,7 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
         else
             pa_operation_unref(op);
     } else {
+    	/* speakers are more than one and so the combine-module has to be loaded*/
         combinedSinkName = "combined";
         foreach (const QByteArray &addr, speakers)
             combinedSinkName += addr.trimmed().prepend('_');
