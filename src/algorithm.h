@@ -21,6 +21,8 @@ signals:
     void outputsChanged(const QHash<QString, QSet<QString> > &outputs);
 
 private:
+
+    /* seconds amount after which the playback is forced */
     int retryCount;
     const RssiModel *rssi;
 

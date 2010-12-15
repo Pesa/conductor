@@ -25,7 +25,7 @@ void Algorithm::chooseOutputs()
                 sorted[r] = room;
         }
 
-        // choose the rooms with highest RSSI
+        // choose the rooms with highest RSSI (limited to the first maxSimultaneousSpeakers) 
         QSet<QString> results;
         QMapIterator<int, QString> i(sorted);
         int n = 0;
@@ -53,7 +53,7 @@ void Algorithm::chooseOutputs()
                 neighbors.unite(adjRooms.value(room));
             results.intersect(neighbors);
         }
-
+		// update only if new outputs differ from the current ones
         if (results != curRooms) {
             curOutputs[device] = results;
             newOutputs[device] = results;
