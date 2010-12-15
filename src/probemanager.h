@@ -24,7 +24,15 @@ public slots:
     void stopMonitoring(const QString &device);
 
 signals:
+    /*!
+      Emitted when all configured probes are connected
+      to ProbeManager and have been fully initialized.
+    */
     void ready();
+
+    /*!
+      Notifies the change of RSSI value for the specified probe and device.
+    */
     void rssiChanged(const QString &probe, const QString &device, int rssi);
 
 private:
