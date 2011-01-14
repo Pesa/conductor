@@ -1,7 +1,9 @@
+#include <pulse/error.h>
 #include <pulse/introspect.h>
 #include <pulse/operation.h>
 
 #include "sinkmodel.h"
+#include "paoperation.h"
 
 
 SinkModel::SinkModel(QObject *parent) :
@@ -78,7 +80,8 @@ void SinkModel::removeSink(uint32_t index)
 
 void SinkModel::updateSink(pa_context *c, uint32_t index)
 {
-    pa_operation *op = pa_context_get_sink_info_by_index(c, index, SinkModel::updateSinkCallback, this);
+    PAOperation *o = new PAOperation(this, index, this);
+    pa_operation *op = pa_context_get_sink_info_by_index(c, index, SinkModel::updateSinkCallback, o);
     if (op)
         pa_operation_unref(op);
 }
@@ -107,15 +110,18 @@ void SinkModel::populateSinkCallback(pa_context *, const pa_sink_info *i, int eo
     model->sinksTemp->append(Sink(i->index, i->name, i->description));
 }
 
-void SinkModel::updateSinkCallback(pa_context *, const pa_sink_info *i, int eol, void *userdata)
+void SinkModel::updateSinkCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
-    SinkModel *model = static_cast<SinkModel*>(userdata);
+    PAOperation *o = static_cast<PAOperation*>(userdata);
 
     if (eol != 0) {
         if (eol < 0)
-            qWarning("SinkModel::updateSinkCallback() failure");
+            qWarning("SinkModel::updateSinkCallback(): sink #%u: %s",
+                     o->index(), pa_strerror(pa_context_errno(c)));
         return;
     }
+
+    SinkModel *model = static_cast<SinkModel*>(o->owner());
 
     Sink s(i->index, i->name, i->description);
     int idx = model->sinks->indexOf(s);
