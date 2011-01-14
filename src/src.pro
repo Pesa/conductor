@@ -30,6 +30,7 @@ HEADERS += \
     mainwindow.h \
     algorithm.h \
     pacontroller.h \
+    paoperation.h \
     sinkinputmodel.h \
     sinkinput.h \
     sink.h \
