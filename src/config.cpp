@@ -3,8 +3,8 @@
 QHash<QString, QByteArray> Config::probesAddresses()
 {
     QHash<QString, QByteArray> addrs;
-    addrs["room A"] = "192.168.1.10";
-    addrs["room B"] = "192.168.1.11";
+    addrs["room A"] = "127.0.0.1";
+    addrs["room B"] = "10.42.43.1";
     return addrs;
 }
 

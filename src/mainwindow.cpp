@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->testMode, SIGNAL(toggled(bool)), rssi, SLOT(setEditable(bool)));
 
     // schedule delayed initialization of PAController and ProbeManager
-    // (note: these slots will be invoked as soon as the control returns to Qt event loop)
+    // (note: the connected slots will be invoked as soon as control returns to Qt event loop)
     QTimer::singleShot(0, controller, SLOT(connectToDaemon()));
     QTimer::singleShot(0, probe, SLOT(connectToProbes()));
 }

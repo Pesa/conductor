@@ -122,6 +122,7 @@ void SinkModel::updateSinkCallback(pa_context *c, const pa_sink_info *i, int eol
     }
 
     SinkModel *model = static_cast<SinkModel*>(o->owner());
+    o->deleteLater();
 
     Sink s(i->index, i->name, i->description);
     int idx = model->sinks->indexOf(s);

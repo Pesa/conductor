@@ -178,6 +178,7 @@ void SinkInputModel::updateClientCallback(pa_context *c, const pa_client_info *i
     }
 
     SinkInputModel *model = static_cast<SinkInputModel*>(o->owner());
+    o->deleteLater();
 
     model->beginResetModel();
     model->clients->insert(i->index, i->name);
@@ -196,6 +197,7 @@ void SinkInputModel::updateSinkInputCallback(pa_context *c, const pa_sink_input_
     }
 
     SinkInputModel *model = static_cast<SinkInputModel*>(o->owner());
+    o->deleteLater();
 
     SinkInput si(i->index, i->name, i->client, i->sink);
     int idx = model->inputs->indexOf(si);
