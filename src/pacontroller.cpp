@@ -7,6 +7,7 @@
 #include <pulse/subscribe.h>
 
 #include "pacontroller.h"
+#include "paoperation.h"
 
 
 PAController::PAController(QObject *parent) :
@@ -170,13 +171,9 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
 
     if (speakers.count() == 1) {
         QByteArray sink = speakers.first().trimmed().prepend("tunnel.");
-        pa_operation *op;
-
-        if (!(op = pa_context_move_sink_input_by_name(context, inputToBeMoved, sink,
-                                                      PAController::moveCallback, this)))
-            emit warning(tr("pa_context_move_sink_input_by_name() failed"));
-        else
-            pa_operation_unref(op);
+        MoveOperation *o = new MoveOperation(input, sink, this);
+        connect(o, SIGNAL(result(MoveOperation*,bool)), SLOT(moveCallback(MoveOperation*,bool)));
+        o->exec(context);
     } else {
         /* if > 1 speakers have been chosen, we have to combine all of them using combineTunnels() */
         combinedSinkName = "combined";
@@ -187,21 +184,21 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
     }
 }
 
-void PAController::moveCallback(pa_context *c, int success, void *userdata)
+void PAController::moveCallback(MoveOperation *o, bool success)
 {
-    PAController *self = static_cast<PAController*>(userdata);
-
     if (!success)
-        emit self->warning(tr("failed to move stream #") + self->inputToBeMoved);
+        emit warning(tr("failed to move stream #%1 to sink %2")
+                     .arg(o->input().index())
+                     .arg(o->sink()));
 
-    self->inputToBeMoved = PA_INVALID_INDEX;
+    inputToBeMoved = PA_INVALID_INDEX;
 
     /* unload unused module-combine */
-    if (self->oldCombineMod != PA_INVALID_INDEX) {
+    if (oldCombineMod != PA_INVALID_INDEX) {
         pa_operation *op;
-        if ((op = pa_context_unload_module(c, self->oldCombineMod, NULL, NULL)))
+        if ((op = pa_context_unload_module(context, oldCombineMod, NULL, NULL)))
             pa_operation_unref(op);
-        self->oldCombineMod = PA_INVALID_INDEX;
+        oldCombineMod = PA_INVALID_INDEX;
     }
 }
 
@@ -247,11 +244,8 @@ void PAController::combineCallback(pa_context *c, uint32_t idx, void *userdata)
     self->combineMod = idx;
 
     if (self->inputToBeMoved != PA_INVALID_INDEX) {
-        pa_operation *op;
-        if (!(op = pa_context_move_sink_input_by_name(c, self->inputToBeMoved, self->combinedSinkName,
-                                                      PAController::moveCallback, self)))
-            emit self->warning(tr("pa_context_move_sink_input_by_name() failed"));
-        else
-            pa_operation_unref(op);
+        MoveOperation *o = new MoveOperation(SinkInput(self->inputToBeMoved), self->combinedSinkName, self);
+        connect(o, SIGNAL(result(MoveOperation*,bool)), self, SLOT(moveCallback(MoveOperation*,bool)));
+        o->exec(c);
     }
 }

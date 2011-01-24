@@ -84,6 +84,14 @@ void MoveOperation::exec(pa_context *c)
         emit error(pa_context_errno(c));
 }
 
+void MoveOperation::onError(int errno) const
+{
+    qWarning("%s of sink input #%u to %s failed: %s",
+             sender()->metaObject()->className(),
+             _input.index(), _sink.constData(),
+             pa_strerror(errno));
+}
+
 void MoveOperation::callback(pa_context *c, int success, void *userdata)
 {
     MoveOperation *op = static_cast<MoveOperation*>(userdata);

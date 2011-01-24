@@ -56,7 +56,8 @@ class ClientInfoOperation : public GetInfoOperation
     Q_OBJECT
 
 public:
-    explicit ClientInfoOperation(uint32_t index, QObject *parent = 0) : GetInfoOperation(index, parent) {}
+    explicit ClientInfoOperation(uint32_t index, QObject *parent = 0)
+        : GetInfoOperation(index, parent) {}
 
 signals:
     void result(ClientInfoOperation *op, const pa_client_info *info);
@@ -74,7 +75,8 @@ class SinkInfoOperation : public GetInfoOperation
     Q_OBJECT
 
 public:
-    explicit SinkInfoOperation(uint32_t index, QObject *parent = 0) : GetInfoOperation(index, parent) {}
+    explicit SinkInfoOperation(uint32_t index, QObject *parent = 0)
+        : GetInfoOperation(index, parent) {}
 
 signals:
     void result(SinkInfoOperation *op, const pa_sink_info *info);
@@ -92,7 +94,8 @@ class SinkInputInfoOperation : public GetInfoOperation
     Q_OBJECT
 
 public:
-    explicit SinkInputInfoOperation(uint32_t index, QObject *parent = 0) : GetInfoOperation(index, parent) {}
+    explicit SinkInputInfoOperation(uint32_t index, QObject *parent = 0)
+        : GetInfoOperation(index, parent) {}
 
 signals:
     void result(SinkInputInfoOperation *op, const pa_sink_input_info *info);
@@ -113,11 +116,17 @@ public:
     MoveOperation(const SinkInput &input, const QByteArray &sinkName, QObject *parent = 0)
         : PAOperation(parent), _input(input), _sink(sinkName) {}
 
+    SinkInput input() const { return _input; }
+    QString sink() const { return _sink; }
+
 public slots:
     void exec(pa_context *c);
 
 signals:
     void result(MoveOperation *op, bool success);
+
+protected slots:
+    void onError(int errno) const;
 
 private:
     static void callback(pa_context *c, int success, void *userdata);
