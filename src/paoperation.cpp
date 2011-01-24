@@ -10,6 +10,15 @@ PAOperation::PAOperation(QObject *parent) :
     connect(this, SIGNAL(error(int)), SLOT(onError(int)));
 }
 
+void PAOperation::exec(pa_context *c)
+{
+    pa_operation *op = execImpl(c);
+    if (op)
+        pa_operation_unref(op);
+    else
+        emit error(pa_context_errno(c));
+}
+
 void PAOperation::onError(int errno) const
 {
     qWarning("%s failed: %s",
@@ -17,20 +26,16 @@ void PAOperation::onError(int errno) const
              pa_strerror(errno));
 }
 
-void GetInfoOperation::exec(pa_context *c)
-{
-    pa_operation *op = getInfo(c);
-    if (op)
-        pa_operation_unref(op);
-    else
-        emit error(pa_context_errno(c));
-}
-
 void GetInfoOperation::onError(int errno) const
 {
     qWarning("%s (index #%u) failed: %s",
              sender()->metaObject()->className(),
              _index, pa_strerror(errno));
+}
+
+pa_operation *ClientInfoOperation::execImpl(pa_context *c)
+{
+    return pa_context_get_client_info(c, index(), callback, this);
 }
 
 void ClientInfoOperation::callback(pa_context *c, const pa_client_info *i, int eol, void *userdata)
@@ -47,6 +52,11 @@ void ClientInfoOperation::callback(pa_context *c, const pa_client_info *i, int e
     op->deleteLater();
 }
 
+pa_operation *SinkInfoOperation::execImpl(pa_context *c)
+{
+    return pa_context_get_sink_info_by_index(c, index(), callback, this);
+}
+
 void SinkInfoOperation::callback(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
     SinkInfoOperation *op = static_cast<SinkInfoOperation*>(userdata);
@@ -59,6 +69,11 @@ void SinkInfoOperation::callback(pa_context *c, const pa_sink_info *i, int eol, 
         emit op->error(pa_context_errno(c));
 
     op->deleteLater();
+}
+
+pa_operation *SinkInputInfoOperation::execImpl(pa_context *c)
+{
+    return pa_context_get_sink_input_info(c, index(), callback, this);
 }
 
 void SinkInputInfoOperation::callback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
@@ -75,13 +90,9 @@ void SinkInputInfoOperation::callback(pa_context *c, const pa_sink_input_info *i
     op->deleteLater();
 }
 
-void MoveOperation::exec(pa_context *c)
+pa_operation *MoveOperation::execImpl(pa_context *c)
 {
-    pa_operation *op = pa_context_move_sink_input_by_name(c, _input.index(), _sink.constData(), callback, this);
-    if (op)
-        pa_operation_unref(op);
-    else
-        emit error(pa_context_errno(c));
+    return pa_context_move_sink_input_by_name(c, _input.index(), _sink.constData(), callback, this);
 }
 
 void MoveOperation::onError(int errno) const
@@ -106,14 +117,10 @@ void MoveOperation::callback(pa_context *c, int success, void *userdata)
     op->deleteLater();
 }
 
-void LoadModuleOperation::exec(pa_context *c)
+pa_operation *LoadModuleOperation::execImpl(pa_context *c)
 {
     QByteArray args = _args.join(" ").toLocal8Bit();
-    pa_operation *op = pa_context_load_module(c, _name.constData(), args.constData(), callback, this);
-    if (op)
-        pa_operation_unref(op);
-    else
-        emit error(pa_context_errno(c));
+    return pa_context_load_module(c, _name.constData(), args.constData(), callback, this);
 }
 
 void LoadModuleOperation::onError(int errno) const
@@ -137,13 +144,9 @@ void LoadModuleOperation::callback(pa_context *c, uint32_t idx, void *userdata)
     op->deleteLater();
 }
 
-void UnloadModuleOperation::exec(pa_context *c)
+pa_operation *UnloadModuleOperation::execImpl(pa_context *c)
 {
-    pa_operation *op = pa_context_unload_module(c, _index, callback, this);
-    if (op)
-        pa_operation_unref(op);
-    else
-        emit error(pa_context_errno(c));
+    return pa_context_unload_module(c, _index, callback, this);
 }
 
 void UnloadModuleOperation::callback(pa_context *c, int success, void *userdata)

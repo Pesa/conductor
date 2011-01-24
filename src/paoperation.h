@@ -18,11 +18,14 @@ public:
     explicit PAOperation(QObject *parent = 0);
 
 public slots:
-    virtual void exec(pa_context *c) = 0;
+    void exec(pa_context *c);
 
 signals:
     void error(int errno);
     void finished();
+
+protected:
+    virtual pa_operation *execImpl(pa_context *c) = 0;
 
 protected slots:
     virtual void onError(int errno) const;
@@ -38,12 +41,6 @@ public:
         : PAOperation(parent), _index(index) {}
 
     uint32_t index() const { return _index; }
-
-public slots:
-    void exec(pa_context *c);
-
-protected:
-    virtual pa_operation *getInfo(pa_context *c) = 0;
 
 protected slots:
     void onError(int errno) const;
@@ -65,7 +62,7 @@ signals:
     void result(ClientInfoOperation *op, const pa_client_info *info);
 
 protected:
-    pa_operation *getInfo(pa_context *c) { return pa_context_get_client_info(c, index(), callback, this); }
+    pa_operation *execImpl(pa_context *c);
 
 private:
     static void callback(pa_context *c, const pa_client_info *i, int eol, void *userdata);
@@ -84,7 +81,7 @@ signals:
     void result(SinkInfoOperation *op, const pa_sink_info *info);
 
 protected:
-    pa_operation *getInfo(pa_context *c) { return pa_context_get_sink_info_by_index(c, index(), callback, this); }
+    pa_operation *execImpl(pa_context *c);
 
 private:
     static void callback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
@@ -103,7 +100,7 @@ signals:
     void result(SinkInputInfoOperation *op, const pa_sink_input_info *info);
 
 protected:
-    pa_operation *getInfo(pa_context *c) { return pa_context_get_sink_input_info(c, index(), callback, this); }
+    pa_operation *execImpl(pa_context *c);
 
 private:
     static void callback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
@@ -121,11 +118,11 @@ public:
     SinkInput input() const { return _input; }
     QString sink() const { return _sink; }
 
-public slots:
-    void exec(pa_context *c);
-
 signals:
     void result(MoveOperation *op, bool success);
+
+protected:
+    pa_operation *execImpl(pa_context *c);
 
 protected slots:
     void onError(int errno) const;
@@ -148,11 +145,11 @@ public:
 
     QString name() const { return _name; }
 
-public slots:
-    void exec(pa_context *c);
-
 signals:
     void result(LoadModuleOperation *op, uint32_t index);
+
+protected:
+    pa_operation *execImpl(pa_context *c);
 
 protected slots:
     void onError(int errno) const;
@@ -175,11 +172,11 @@ public:
 
     uint32_t index() const { return _index; }
 
-public slots:
-    void exec(pa_context *c);
-
 signals:
     void result(UnloadModuleOperation *op, bool success);
+
+protected:
+    pa_operation *execImpl(pa_context *c);
 
 private:
     static void callback(pa_context *c, int success, void *userdata);
