@@ -7,6 +7,8 @@
 
 #include "sinkinput.h"
 
+class ClientInfoOperation;
+class SinkInputInfoOperation;
 struct pa_context;
 struct pa_client_info;
 struct pa_sink_input_info;
@@ -32,11 +34,13 @@ public:
     void updateClient(pa_context *c, uint32_t index);
     void updateSinkInput(pa_context *c, uint32_t index);
 
+private slots:
+    void onClientInfoResult(ClientInfoOperation *o, const pa_client_info *i);
+    void onSinkInputInfoResult(SinkInputInfoOperation *o, const pa_sink_input_info *i);
+
 private:
     static void populateClientCallback(pa_context *c, const pa_client_info *i, int eol, void *userdata);
     static void populateSinkInputCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
-    static void updateClientCallback(pa_context *c, const pa_client_info *i, int eol, void *userdata);
-    static void updateSinkInputCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
 
     QMap<uint32_t, QString> *clients;
     QMap<uint32_t, QString> *clientsTemp;

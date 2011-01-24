@@ -1,4 +1,3 @@
-#include <pulse/error.h>
 #include <pulse/introspect.h>
 #include <pulse/operation.h>
 
@@ -80,10 +79,24 @@ void SinkModel::removeSink(uint32_t index)
 
 void SinkModel::updateSink(pa_context *c, uint32_t index)
 {
-    PAOperation *o = new PAOperation(this, index, this);
-    pa_operation *op = pa_context_get_sink_info_by_index(c, index, SinkModel::updateSinkCallback, o);
-    if (op)
-        pa_operation_unref(op);
+    SinkInfoOperation *o = new SinkInfoOperation(index, this);
+    connect(o, SIGNAL(result(SinkInfoOperation*,const pa_sink_info*)),
+            SLOT(onSinkInfoResult(SinkInfoOperation*,const pa_sink_info*)));
+    o->exec(c);
+}
+
+void SinkModel::onSinkInfoResult(SinkInfoOperation *o, const pa_sink_info *i)
+{
+    Sink s(i->index, i->name, i->description);
+    SinkModel *model = static_cast<SinkModel*>(o->parent());
+    int idx = model->sinks->indexOf(s);
+
+    model->beginResetModel();
+    if (idx == -1)
+        model->sinks->append(s);
+    else
+        model->sinks->replace(idx, s);
+    model->endResetModel();
 }
 
 void SinkModel::populateSinkCallback(pa_context *, const pa_sink_info *i, int eol, void *userdata)
@@ -108,29 +121,4 @@ void SinkModel::populateSinkCallback(pa_context *, const pa_sink_info *i, int eo
 
     Q_ASSERT(model->sinksTemp);
     model->sinksTemp->append(Sink(i->index, i->name, i->description));
-}
-
-void SinkModel::updateSinkCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
-{
-    PAOperation *o = static_cast<PAOperation*>(userdata);
-
-    if (eol != 0) {
-        if (eol < 0)
-            qWarning("SinkModel::updateSinkCallback(): sink #%u: %s",
-                     o->index(), pa_strerror(pa_context_errno(c)));
-        return;
-    }
-
-    SinkModel *model = static_cast<SinkModel*>(o->owner());
-    o->deleteLater();
-
-    Sink s(i->index, i->name, i->description);
-    int idx = model->sinks->indexOf(s);
-
-    model->beginResetModel();
-    if (idx == -1)
-        model->sinks->append(s);
-    else
-        model->sinks->replace(idx, s);
-    model->endResetModel();
 }

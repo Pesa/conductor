@@ -6,6 +6,7 @@
 
 #include "sink.h"
 
+class SinkInfoOperation;
 struct pa_context;
 struct pa_sink_info;
 
@@ -26,9 +27,11 @@ public:
     void removeSink(uint32_t index);
     void updateSink(pa_context *c, uint32_t index);
 
+private slots:
+    void onSinkInfoResult(SinkInfoOperation *o, const pa_sink_info *i);
+
 private:
     static void populateSinkCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
-    static void updateSinkCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
 
     QList<Sink> *sinks;
     QList<Sink> *sinksTemp;

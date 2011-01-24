@@ -16,6 +16,7 @@ SOURCES += main.cpp \
     mainwindow.cpp \
     algorithm.cpp \
     pacontroller.cpp \
+    paoperation.cpp \
     sinkinputmodel.cpp \
     sinkinput.cpp \
     sink.cpp \

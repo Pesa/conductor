@@ -1,4 +1,3 @@
-#include <pulse/error.h>
 #include <pulse/introspect.h>
 #include <pulse/operation.h>
 
@@ -104,18 +103,41 @@ void SinkInputModel::removeSinkInput(uint32_t index)
 
 void SinkInputModel::updateClient(pa_context *c, uint32_t index)
 {
-    PAOperation *o = new PAOperation(this, index, this);
-    pa_operation *op = pa_context_get_client_info(c, index, SinkInputModel::updateClientCallback, o);
-    if (op)
-        pa_operation_unref(op);
+    ClientInfoOperation *o = new ClientInfoOperation(index, this);
+    connect(o, SIGNAL(result(ClientInfoOperation*,const pa_client_info*)),
+            SLOT(onClientInfoResult(ClientInfoOperation*,const pa_client_info*)));
+    o->exec(c);
 }
 
 void SinkInputModel::updateSinkInput(pa_context *c, uint32_t index)
 {
-    PAOperation *o = new PAOperation(this, index, this);
-    pa_operation *op = pa_context_get_sink_input_info(c, index, SinkInputModel::updateSinkInputCallback, o);
-    if (op)
-        pa_operation_unref(op);
+    SinkInputInfoOperation *o = new SinkInputInfoOperation(index, this);
+    connect(o, SIGNAL(result(SinkInputInfoOperation*,const pa_sink_input_info*)),
+            SLOT(onSinkInputInfoResult(SinkInputInfoOperation*,const pa_sink_input_info*)));
+    o->exec(c);
+}
+
+void SinkInputModel::onClientInfoResult(ClientInfoOperation *o, const pa_client_info *i)
+{
+    SinkInputModel *model = static_cast<SinkInputModel*>(o->parent());
+
+    model->beginResetModel();
+    model->clients->insert(i->index, i->name);
+    model->endResetModel();
+}
+
+void SinkInputModel::onSinkInputInfoResult(SinkInputInfoOperation *o, const pa_sink_input_info *i)
+{
+    SinkInput si(i->index, i->name, i->client, i->sink);
+    SinkInputModel *model = static_cast<SinkInputModel*>(o->parent());
+    int idx = model->inputs->indexOf(si);
+
+    model->beginResetModel();
+    if (idx == -1)
+        model->inputs->append(si);
+    else
+        model->inputs->replace(idx, si);
+    model->endResetModel();
 }
 
 void SinkInputModel::populateClientCallback(pa_context *, const pa_client_info *i, int eol, void *userdata)
@@ -164,48 +186,4 @@ void SinkInputModel::populateSinkInputCallback(pa_context *, const pa_sink_input
 
     Q_ASSERT(model->inputsTemp);
     model->inputsTemp->append(SinkInput(i->index, i->name, i->client, i->sink));
-}
-
-void SinkInputModel::updateClientCallback(pa_context *c, const pa_client_info *i, int eol, void *userdata)
-{
-    PAOperation *o = static_cast<PAOperation*>(userdata);
-
-    if (eol != 0) {
-        if (eol < 0)
-            qWarning("SinkInputModel::updateClientCallback(): client #%u: %s",
-                     o->index(), pa_strerror(pa_context_errno(c)));
-        return;
-    }
-
-    SinkInputModel *model = static_cast<SinkInputModel*>(o->owner());
-    o->deleteLater();
-
-    model->beginResetModel();
-    model->clients->insert(i->index, i->name);
-    model->endResetModel();
-}
-
-void SinkInputModel::updateSinkInputCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
-{
-    PAOperation *o = static_cast<PAOperation*>(userdata);
-
-    if (eol != 0) {
-        if (eol < 0)
-            qWarning("SinkInputModel::updateSinkInputCallback(): sink input #%u: %s",
-                     o->index(), pa_strerror(pa_context_errno(c)));
-        return;
-    }
-
-    SinkInputModel *model = static_cast<SinkInputModel*>(o->owner());
-    o->deleteLater();
-
-    SinkInput si(i->index, i->name, i->client, i->sink);
-    int idx = model->inputs->indexOf(si);
-
-    model->beginResetModel();
-    if (idx == -1)
-        model->inputs->append(si);
-    else
-        model->inputs->replace(idx, si);
-    model->endResetModel();
 }
