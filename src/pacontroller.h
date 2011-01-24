@@ -7,6 +7,7 @@
 #include "sinkinputmodel.h"
 #include "sinkmodel.h"
 
+class LoadModuleOperation;
 class MoveOperation;
 struct pa_context;
 struct pa_glib_mainloop;
@@ -55,13 +56,13 @@ signals:
     void warning(const QString &msg);
 
 private slots:
+    void combineCallback(LoadModuleOperation *o, uint32_t index);
     void moveCallback(MoveOperation *o, bool success);
+    void tunnelCallback(LoadModuleOperation *o, uint32_t index);
 
 private:
-    static void combineCallback(pa_context *c, uint32_t idx, void *userdata);
     static void stateCallback(pa_context *c, void *userdata);
     static void subscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
-    static void tunnelCallback(pa_context *c, uint32_t idx, void *userdata);
 
     /*!
       Create a new virtual sink that combines all the specified tunnels
