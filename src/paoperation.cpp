@@ -77,7 +77,7 @@ void SinkInputInfoOperation::callback(pa_context *c, const pa_sink_input_info *i
 
 void MoveOperation::exec(pa_context *c)
 {
-    pa_operation *op = pa_context_move_sink_input_by_name(c, _input.index(), _sink, callback, this);
+    pa_operation *op = pa_context_move_sink_input_by_name(c, _input.index(), _sink.constData(), callback, this);
     if (op)
         pa_operation_unref(op);
     else
@@ -95,6 +95,60 @@ void MoveOperation::onError(int errno) const
 void MoveOperation::callback(pa_context *c, int success, void *userdata)
 {
     MoveOperation *op = static_cast<MoveOperation*>(userdata);
+
+    emit op->result(op, success);
+
+    if (success)
+        emit op->finished();
+    else
+        emit op->error(pa_context_errno(c));
+
+    op->deleteLater();
+}
+
+void LoadModuleOperation::exec(pa_context *c)
+{
+    QByteArray args = _args.join(" ").toLocal8Bit();
+    pa_operation *op = pa_context_load_module(c, _name.constData(), args.constData(), callback, this);
+    if (op)
+        pa_operation_unref(op);
+    else
+        emit error(pa_context_errno(c));
+}
+
+void LoadModuleOperation::onError(int errno) const
+{
+    qWarning("%s (%s) failed: %s",
+             sender()->metaObject()->className(),
+             _name.constData(), pa_strerror(errno));
+}
+
+void LoadModuleOperation::callback(pa_context *c, uint32_t idx, void *userdata)
+{
+    LoadModuleOperation *op = static_cast<LoadModuleOperation*>(userdata);
+
+    emit op->result(op, idx);
+
+    if (idx == PA_INVALID_INDEX)
+        emit op->error(pa_context_errno(c));
+    else
+        emit op->finished();
+
+    op->deleteLater();
+}
+
+void UnloadModuleOperation::exec(pa_context *c)
+{
+    pa_operation *op = pa_context_unload_module(c, _index, callback, this);
+    if (op)
+        pa_operation_unref(op);
+    else
+        emit error(pa_context_errno(c));
+}
+
+void UnloadModuleOperation::callback(pa_context *c, int success, void *userdata)
+{
+    UnloadModuleOperation *op = static_cast<UnloadModuleOperation*>(userdata);
 
     emit op->result(op, success);
 

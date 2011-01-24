@@ -1,7 +1,9 @@
 #ifndef PAOPERATION_H
 #define PAOPERATION_H
 
+#include <QByteArray>
 #include <QObject>
+#include <QStringList>
 
 #include <pulse/introspect.h>
 
@@ -133,6 +135,56 @@ private:
 
     SinkInput _input;
     QByteArray _sink;
+};
+
+
+class LoadModuleOperation : public PAOperation
+{
+    Q_OBJECT
+
+public:
+    LoadModuleOperation(const QByteArray &moduleName, const QStringList &args, QObject *parent = 0)
+        : PAOperation(parent), _name(moduleName), _args(args) {}
+
+    QString name() const { return _name; }
+
+public slots:
+    void exec(pa_context *c);
+
+signals:
+    void result(LoadModuleOperation *op, uint32_t index);
+
+protected slots:
+    void onError(int errno) const;
+
+private:
+    static void callback(pa_context *c, uint32_t idx, void *userdata);
+
+    QByteArray _name;
+    QStringList _args;
+};
+
+
+class UnloadModuleOperation : public PAOperation
+{
+    Q_OBJECT
+
+public:
+    UnloadModuleOperation(uint32_t index, QObject *parent = 0)
+        : PAOperation(parent), _index(index) {}
+
+    uint32_t index() const { return _index; }
+
+public slots:
+    void exec(pa_context *c);
+
+signals:
+    void result(UnloadModuleOperation *op, bool success);
+
+private:
+    static void callback(pa_context *c, int success, void *userdata);
+
+    uint32_t _index;
 };
 
 #endif // PAOPERATION_H
