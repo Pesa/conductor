@@ -167,7 +167,7 @@ class UnloadModuleOperation : public PAOperation
     Q_OBJECT
 
 public:
-    UnloadModuleOperation(uint32_t index, QObject *parent = 0)
+    explicit UnloadModuleOperation(uint32_t index, QObject *parent = 0)
         : PAOperation(parent), _index(index) {}
 
     uint32_t index() const { return _index; }

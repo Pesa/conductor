@@ -1,9 +1,3 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2010-10-15T15:03:16
-#
-#-------------------------------------------------
-
 TEMPLATE = app
 TARGET = conductor
 
@@ -12,11 +6,13 @@ PKGCONFIG   += libpulse-mainloop-glib
 
 QXT = core network
 
+
 SOURCES += main.cpp \
     mainwindow.cpp \
     algorithm.cpp \
     pacontroller.cpp \
     paoperation.cpp \
+    paoperationqueue.cpp \
     sinkinputmodel.cpp \
     sinkinput.cpp \
     sink.cpp \
@@ -32,6 +28,7 @@ HEADERS += \
     algorithm.h \
     pacontroller.h \
     paoperation.h \
+    paoperationqueue.h \
     sinkinputmodel.h \
     sinkinput.h \
     sink.h \
