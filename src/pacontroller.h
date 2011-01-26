@@ -8,7 +8,6 @@
 #include "sinkmodel.h"
 
 class LoadModuleOperation;
-class MoveOperation;
 struct pa_context;
 struct pa_glib_mainloop;
 
@@ -57,7 +56,6 @@ signals:
 
 private slots:
     void combineCallback(LoadModuleOperation *o, uint32_t index);
-    void moveCallback(MoveOperation *o, bool success);
     void tunnelCallback(LoadModuleOperation *o, uint32_t index);
 
 private:
@@ -65,24 +63,19 @@ private:
     static void subscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
 
     /*!
-      Create a new virtual sink that combines all the specified tunnels
-      into one. This allows to playback a single audio stream from all
-      the combined speakers at the same time.
+      Returns a list of strings ready to be passed as arguments to module-combine.
 
       \param addresses List of IP addresses of the speakers that must be combined.
       \param name The name for the new sink.
       \param adjustTime Time in seconds when to readjust the sample rate of all sinks.
       \param resampleMethod Resampling algorithm to use. See libsamplerate's documentation.
     */
-    void combineTunnels(const QList<QByteArray> &addresses, const QString &name = QString(),
-                        int adjustTime = -1, const QString &resampleMethod = QString());
+    QStringList combineArguments(const QList<QByteArray> &addresses, const QString &name = QString(),
+                                 int adjustTime = -1, const QString &resampleMethod = QString());
 
     pa_context *context;
     pa_glib_mainloop *mainloop;
-    QByteArray combinedSinkName;
     uint32_t combineMod;
-    uint32_t oldCombineMod;
-    uint32_t inputToBeMoved;
     SinkInputModel *inputModel;
     SinkModel *sinkModel;
     QList<uint32_t> tunnelModules;

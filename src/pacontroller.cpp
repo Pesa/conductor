@@ -1,5 +1,3 @@
-#include <QStringList>
-
 #include <pulse/context.h>
 #include <pulse/glib-mainloop.h>
 #include <pulse/introspect.h>
@@ -8,13 +6,12 @@
 
 #include "pacontroller.h"
 #include "paoperation.h"
+#include "paoperationqueue.h"
 
 
 PAController::PAController(QObject *parent) :
     QObject(parent),
     combineMod(PA_INVALID_INDEX),
-    oldCombineMod(PA_INVALID_INDEX),
-    inputToBeMoved(PA_INVALID_INDEX),
     inputModel(new SinkInputModel(this)),
     sinkModel(new SinkModel(this))
 {
@@ -164,44 +161,46 @@ void PAController::moveSinkInput(const SinkInput &input, const QList<QByteArray>
     if (speakers.isEmpty())
         return;
 
-    inputToBeMoved = input.index();
+    PAOperationQueue *q = new PAOperationQueue(this);
 
-    if (speakers.count() == 1) {
-        QByteArray sink = speakers.first().trimmed().prepend("tunnel.");
-        MoveOperation *o = new MoveOperation(input, sink, this);
-        connect(o, SIGNAL(result(MoveOperation*,bool)), SLOT(moveCallback(MoveOperation*,bool)));
-        o->exec(context);
-    } else {
-        /* if > 1 speakers have been chosen, we have to combine all of them using combineTunnels() */
-        combinedSinkName = "combined";
+    /* figure out the target sink name */
+    QByteArray sinkName;
+    if (speakers.count() == 1)
+        sinkName = speakers.first().trimmed().prepend("tunnel.");
+    else {
+        /* if > 1 speakers have been chosen, we have to combine all of them using module-combine */
+        sinkName = "combined";
         foreach (const QByteArray &addr, speakers)
-            combinedSinkName += addr.trimmed().prepend('_');
+            sinkName += addr.trimmed().prepend('_');
 
-        combineTunnels(speakers, combinedSinkName, 10, "src-sinc-best-quality");
+        QStringList args = combineArguments(speakers, sinkName, 10, "src-sinc-best-quality");
+        LoadModuleOperation *load = new LoadModuleOperation("module-combine", args);
+        connect(load, SIGNAL(result(LoadModuleOperation*,uint32_t)), SLOT(combineCallback(LoadModuleOperation*,uint32_t)));
+        q->enqueue(load);
     }
+
+    /* move the stream */
+    MoveOperation *move = new MoveOperation(input, sinkName);
+    q->enqueue(move);
+
+    if (combineMod != PA_INVALID_INDEX) {
+        /* unload unused module-combine */
+        UnloadModuleOperation *unload = new UnloadModuleOperation(combineMod);
+        q->enqueue(unload);
+    }
+
+    q->exec(context);
 }
 
-void PAController::moveCallback(MoveOperation *o, bool success)
+void PAController::combineCallback(LoadModuleOperation *, uint32_t index)
 {
-    if (!success)
-        emit warning(tr("failed to move stream #%1 to sink %2")
-                     .arg(o->input().index())
-                     .arg(o->sink()));
-
-    inputToBeMoved = PA_INVALID_INDEX;
-
-    /* unload unused module-combine */
-    if (oldCombineMod != PA_INVALID_INDEX) {
-        UnloadModuleOperation *o = new UnloadModuleOperation(oldCombineMod, this);
-        o->exec(context);
-        oldCombineMod = PA_INVALID_INDEX;
-    }
+    if (index != PA_INVALID_INDEX)
+        combineMod = index;
 }
 
-void PAController::combineTunnels(const QList<QByteArray> &addresses, const QString &name,
-                                  int adjustTime, const QString &resampleMethod)
+QStringList PAController::combineArguments(const QList<QByteArray> &addresses, const QString &name,
+                                           int adjustTime, const QString &resampleMethod)
 {
-    /* build the list of arguments to module-combine */
     QStringList args;
 
     QString slaves;
@@ -217,26 +216,5 @@ void PAController::combineTunnels(const QList<QByteArray> &addresses, const QStr
     if (!resampleMethod.trimmed().isEmpty())
         args << resampleMethod.trimmed().prepend("resample_method=");
 
-    /* load module-combine */
-    LoadModuleOperation *o = new LoadModuleOperation("module-combine", args, this);
-    connect(o, SIGNAL(result(LoadModuleOperation*,uint32_t)), SLOT(combineCallback(LoadModuleOperation*,uint32_t)));
-    o->exec(context);
-}
-
-void PAController::combineCallback(LoadModuleOperation *o, uint32_t index)
-{
-    if (index == PA_INVALID_INDEX) {
-        emit warning(tr("failed to load %1")
-                     .arg(o->name()));
-        return;
-    }
-
-    oldCombineMod = combineMod;
-    combineMod = index;
-
-    if (inputToBeMoved != PA_INVALID_INDEX) {
-        MoveOperation *o = new MoveOperation(SinkInput(inputToBeMoved), combinedSinkName, this);
-        connect(o, SIGNAL(result(MoveOperation*,bool)), SLOT(moveCallback(MoveOperation*,bool)));
-        o->exec(context);
-    }
+    return args;
 }
