@@ -27,8 +27,8 @@ void PAOperationQueue::exec(pa_context *c)
 
 void PAOperationQueue::onOperationError(int errno)
 {
-    context = 0;
     emit error(errno);
+    deleteLater();
 }
 
 void PAOperationQueue::onOperationFinished()
@@ -40,8 +40,8 @@ void PAOperationQueue::onOperationFinished()
 void PAOperationQueue::execHead()
 {
     if (queue.isEmpty()) {
-        context = 0;
         emit finished();
+        deleteLater();
     } else {
         PAOperation *op = queue.head();
         connect(op, SIGNAL(error(int)), SLOT(onOperationError(int)));
