@@ -1,5 +1,6 @@
 #include <pulse/error.h>
 #include <pulse/operation.h>
+#include <pulse/subscribe.h>
 
 #include "paoperation.h"
 
@@ -154,6 +155,23 @@ void UnloadModuleOperation::callback(pa_context *c, int success, void *userdata)
     UnloadModuleOperation *op = static_cast<UnloadModuleOperation*>(userdata);
 
     emit op->result(op, success);
+
+    if (success)
+        emit op->finished();
+    else
+        emit op->error(pa_context_errno(c));
+
+    op->deleteLater();
+}
+
+pa_operation *SubscribeOperation::execImpl(pa_context *c)
+{
+    return pa_context_subscribe(c, _mask, callback, this);
+}
+
+void SubscribeOperation::callback(pa_context *c, int success, void *userdata)
+{
+    SubscribeOperation *op = static_cast<SubscribeOperation*>(userdata);
 
     if (success)
         emit op->finished();

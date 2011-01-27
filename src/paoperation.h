@@ -184,4 +184,22 @@ private:
     uint32_t _index;
 };
 
+
+class SubscribeOperation : public PAOperation
+{
+    Q_OBJECT
+
+public:
+    explicit SubscribeOperation(pa_subscription_mask_t mask, QObject *parent = 0)
+        : PAOperation(parent), _mask(mask) {}
+
+protected:
+    pa_operation *execImpl(pa_context *c);
+
+private:
+    static void callback(pa_context *c, int success, void *userdata);
+
+    pa_subscription_mask_t _mask;
+};
+
 #endif // PAOPERATION_H

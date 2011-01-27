@@ -1,7 +1,5 @@
 #include <pulse/context.h>
 #include <pulse/glib-mainloop.h>
-#include <pulse/introspect.h>
-#include <pulse/operation.h>
 #include <pulse/subscribe.h>
 
 #include "pacontroller.h"
@@ -55,19 +53,16 @@ void PAController::stateCallback(pa_context *c, void *userdata)
     switch (pa_context_get_state(c)) {
 
     case PA_CONTEXT_READY: {
+        /* notify that we are now connected */
         emit self->connected(pa_context_get_server(c), pa_context_is_local(c));
 
         /* subscribe to client, sink and sink input events */
+        pa_subscription_mask_t mask = (pa_subscription_mask_t) (PA_SUBSCRIPTION_MASK_CLIENT |
+                                                                PA_SUBSCRIPTION_MASK_SINK |
+                                                                PA_SUBSCRIPTION_MASK_SINK_INPUT);
         pa_context_set_subscribe_callback(c, PAController::subscribeCallback, self);
-        pa_operation *op = pa_context_subscribe(c, (pa_subscription_mask_t)
-                                                (PA_SUBSCRIPTION_MASK_CLIENT |
-                                                 PA_SUBSCRIPTION_MASK_SINK |
-                                                 PA_SUBSCRIPTION_MASK_SINK_INPUT),
-                                                NULL, NULL);
-        if (op)
-            pa_operation_unref(op);
-        else
-            emit self->error(tr("pa_context_subscribe() failed"));
+        SubscribeOperation *o = new SubscribeOperation(mask, self);
+        o->exec(c);
 
         /* initialize table models */
         if (!self->inputModel->populate(c))
