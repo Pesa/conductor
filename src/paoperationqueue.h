@@ -15,9 +15,9 @@ public:
     explicit PAOperationQueue(QObject *parent = 0);
 
     void enqueue(PAOperation *op);
-    bool isRunning() const { return context != 0; }
 
-    PAOperationQueue& operator<<(PAOperation *op);
+    bool isRunning() const { return context != 0; }
+    void setAbortOnFailure(bool abort) { abortOnFailure = abort; }
 
 public slots:
     void exec(pa_context *c);
@@ -33,6 +33,7 @@ private slots:
 private:
     void execHead();
 
+    bool abortOnFailure;
     pa_context *context;
     QQueue<PAOperation*> queue;
 };
