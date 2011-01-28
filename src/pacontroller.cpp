@@ -1,3 +1,5 @@
+#include <QApplication>
+
 #include <pulse/context.h>
 #include <pulse/glib-mainloop.h>
 #include <pulse/subscribe.h>
@@ -16,21 +18,12 @@ PAController::PAController(QObject *parent) :
     /* initialize PulseAudio data structures */
     mainloop = pa_glib_mainloop_new(NULL);
     context = pa_context_new(pa_glib_mainloop_get_api(mainloop), "conductor");
+
+    connect(qApp, SIGNAL(lastWindowClosed()), SLOT(cleanup()));
 }
 
 PAController::~PAController()
 {
-    /* unload all modules previously loaded by us */
-    UnloadModuleOperation *o;
-    if (combineMod != PA_INVALID_INDEX) {
-        o = new UnloadModuleOperation(combineMod, this);
-        o->exec(context);
-    }
-    foreach (uint32_t idx, tunnelModules) {
-        o = new UnloadModuleOperation(idx, this);
-        o->exec(context);
-    }
-
     /* disconnect and release resources */
     pa_context_disconnect(context);
     pa_context_unref(context);
@@ -212,4 +205,20 @@ QStringList PAController::combineArguments(const QList<QByteArray> &addresses, c
         args << resampleMethod.trimmed().prepend("resample_method=");
 
     return args;
+}
+
+void PAController::cleanup()
+{
+    PAOperationQueue *q = new PAOperationQueue(this);
+    q->setAbortOnFailure(false);
+
+    /* unload all modules previously loaded by us */
+    if (combineMod != PA_INVALID_INDEX)
+        q->enqueue(new UnloadModuleOperation(combineMod));
+    foreach (uint32_t idx, tunnelModules)
+        q->enqueue(new UnloadModuleOperation(idx));
+
+    connect(q, SIGNAL(error(int)), qApp, SLOT(quit()));
+    connect(q, SIGNAL(finished()), qApp, SLOT(quit()));
+    q->exec(context);
 }

@@ -55,6 +55,7 @@ signals:
     void warning(const QString &msg);
 
 private slots:
+    void cleanup();
     void combineCallback(LoadModuleOperation *o, uint32_t index);
     void tunnelCallback(LoadModuleOperation *o, uint32_t index);
 
