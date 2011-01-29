@@ -104,8 +104,6 @@ void MoveOperation::callback(pa_context *c, int success, void *userdata)
 {
     MoveOperation *op = static_cast<MoveOperation*>(userdata);
 
-    emit op->result(op, success);
-
     if (success)
         emit op->finished();
     else
@@ -145,8 +143,6 @@ pa_operation *UnloadModuleOperation::execImpl(pa_context *c)
 void UnloadModuleOperation::callback(pa_context *c, int success, void *userdata)
 {
     UnloadModuleOperation *op = static_cast<UnloadModuleOperation*>(userdata);
-
-    emit op->result(op, success);
 
     if (success)
         emit op->finished();

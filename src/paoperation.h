@@ -118,9 +118,6 @@ public:
     SinkInput input() const { return _input; }
     QString sink() const { return _sink; }
 
-signals:
-    void result(MoveOperation *op, bool success);
-
 protected:
     pa_operation *execImpl(pa_context *c);
 
@@ -171,9 +168,6 @@ public:
         : PAOperation(parent), _index(index) {}
 
     uint32_t index() const { return _index; }
-
-signals:
-    void result(UnloadModuleOperation *op, bool success);
 
 protected:
     pa_operation *execImpl(pa_context *c);
