@@ -6,6 +6,8 @@ PAOperationQueue::PAOperationQueue(QObject *parent) :
     abortOnFailure(true),
     context(0)
 {
+    connect(this, SIGNAL(error(int)), SLOT(deleteLater()), Qt::QueuedConnection);
+    connect(this, SIGNAL(finished()), SLOT(deleteLater()), Qt::QueuedConnection);
 }
 
 void PAOperationQueue::enqueue(PAOperation *op)
@@ -28,12 +30,10 @@ void PAOperationQueue::exec(pa_context *c)
 
 void PAOperationQueue::onOperationError(int errno)
 {
-    if (abortOnFailure) {
+    if (abortOnFailure)
         emit error(errno);
-        deleteLater();
-    } else {
+    else
         onOperationFinished();
-    }
 }
 
 void PAOperationQueue::onOperationFinished()
@@ -44,10 +44,9 @@ void PAOperationQueue::onOperationFinished()
 
 void PAOperationQueue::execHead()
 {
-    if (queue.isEmpty()) {
+    if (queue.isEmpty())
         emit finished();
-        deleteLater();
-    } else {
+    else {
         PAOperation *op = queue.head();
         connect(op, SIGNAL(error(int)), SLOT(onOperationError(int)));
         connect(op, SIGNAL(finished()), SLOT(onOperationFinished()));

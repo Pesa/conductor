@@ -9,6 +9,8 @@ PAOperation::PAOperation(QObject *parent) :
     QObject(parent)
 {
     connect(this, SIGNAL(error(int)), SLOT(onError(int)));
+    connect(this, SIGNAL(error(int)), SLOT(deleteLater()), Qt::QueuedConnection);
+    connect(this, SIGNAL(finished()), SLOT(deleteLater()), Qt::QueuedConnection);
 }
 
 void PAOperation::exec(pa_context *c)
@@ -49,8 +51,6 @@ void ClientInfoOperation::callback(pa_context *c, const pa_client_info *i, int e
         emit op->finished();
     else
         emit op->error(pa_context_errno(c));
-
-    op->deleteLater();
 }
 
 pa_operation *SinkInfoOperation::execImpl(pa_context *c)
@@ -68,8 +68,6 @@ void SinkInfoOperation::callback(pa_context *c, const pa_sink_info *i, int eol, 
         emit op->finished();
     else
         emit op->error(pa_context_errno(c));
-
-    op->deleteLater();
 }
 
 pa_operation *SinkInputInfoOperation::execImpl(pa_context *c)
@@ -87,8 +85,6 @@ void SinkInputInfoOperation::callback(pa_context *c, const pa_sink_input_info *i
         emit op->finished();
     else
         emit op->error(pa_context_errno(c));
-
-    op->deleteLater();
 }
 
 pa_operation *MoveOperation::execImpl(pa_context *c)
@@ -114,8 +110,6 @@ void MoveOperation::callback(pa_context *c, int success, void *userdata)
         emit op->finished();
     else
         emit op->error(pa_context_errno(c));
-
-    op->deleteLater();
 }
 
 pa_operation *LoadModuleOperation::execImpl(pa_context *c)
@@ -141,8 +135,6 @@ void LoadModuleOperation::callback(pa_context *c, uint32_t idx, void *userdata)
         emit op->error(pa_context_errno(c));
     else
         emit op->finished();
-
-    op->deleteLater();
 }
 
 pa_operation *UnloadModuleOperation::execImpl(pa_context *c)
@@ -160,8 +152,6 @@ void UnloadModuleOperation::callback(pa_context *c, int success, void *userdata)
         emit op->finished();
     else
         emit op->error(pa_context_errno(c));
-
-    op->deleteLater();
 }
 
 pa_operation *SubscribeOperation::execImpl(pa_context *c)
@@ -177,6 +167,4 @@ void SubscribeOperation::callback(pa_context *c, int success, void *userdata)
         emit op->finished();
     else
         emit op->error(pa_context_errno(c));
-
-    op->deleteLater();
 }
