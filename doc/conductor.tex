@@ -2,46 +2,50 @@
 \usepackage[utf8]{inputenc}
 \usepackage[pdftex]{hyperref}
 \usepackage{algorithmic}
+\usepackage{amssymb}
 \usepackage{cite}
 \usepackage{graphicx}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works}
 
-
-\begin{document}
-
-\title{A proximity localization system for routing audio streams based on Bluetooth technology}
+\title{A dynamic audio routing system\\based on the RSSI of a Bluetooth device}% Audio streams routing based on the location of a passive Bluetooth device % Using the RSSI of a BT device to dynamically route audio streams % A proximity detection system for routing audio streams based on Bluetooth technology
 \author{Davide~Pesavento, Martina~Astegno \\
 	Università degli Studi di Padova \\
 	Corso di Laurea Magistrale in Informatica \\
 	\{dpesaven,mastegno\}@studenti.math.unipd.it
 }
 
+
+\begin{document}
+
 \maketitle
 
 \begin{abstract}
-In this paper we present a prototype application that shows how the Bluetooth technology can be used to locate a person wearing a Bluetooth device (e.g. a smartphone) among a set of rooms. The final aim is to playback an audio stream stored in a central server and move it from a speaker to another, situated in every room, following the person's movements.
+In this paper we present a prototype application that shows how the Bluetooth technology can be used to locate a person wearing a Bluetooth device (e.g. a smartphone) among a set of rooms. The final aim is to playback an audio stream in one of these rooms and dynamically switch it from one speaker to another, according to the person's movements.
 \end{abstract}
 
-\begin{IEEEkeywords} % normally used for peerreview paper
-Bluetooth, BlueZ, DBus, PulseAudio, audio routing, smartphone.
-\end{IEEEkeywords}
+%\begin{IEEEkeywords} % normally used for peerreview paper
+%Bluetooth, BlueZ, DBus, PulseAudio, audio routing, smartphone.
+%\end{IEEEkeywords}
 
-\IEEEpeerreviewmaketitle
+%\IEEEpeerreviewmaketitle
 
 \section{Introduction}
+
 \subsection{Bluetooth technology}
 Bluetooth is an open specification for a radio system that provides the network infrastructure to enable short range wireless communication of data and voice. It comprises of a hardware component and a software component. The specification also describes usage models and user profiles for these models.
 Bluetooth supports two kinds of links: Asynchronous Connectionless (ACL) links for data transmission and Synchronous Connection Oriented (SCO) links for audio/voice transmission. It uses Frequency Hopping Spread Spectrum (FHSS) to avoid any interference. A Bluetooth channel is divided into time slots each 625 micro second in length. The devices hop through these timeslots making 1600 hops per second. This trades bandwidth efficiency for reliability, integrity and security.
-In figure \ref{stack} we can see the architecture of Bluetooth protocol.\\
+In figure \ref{stack} we can see the architecture of the Bluetooth protocol suite.
+\\
 \begin{figure}[h]
 \centering
-\includegraphics[scale = 0.3]{BTstack.pdf}
+\includegraphics[scale=0.3]{BTstack.pdf}
 \caption{Bluetooth protocol stack}
 \label{stack}
 \end{figure}
-In our project we adopt a specific Bluetooth stack implementation, \textbf{Bluez} version 4 or later, that provides support for the core Bluetooth layers and protocols. It is flexible, efficient and uses a modular implementation. \\
+
+In our project we adopted a specific Bluetooth stack implementation, \textbf{Bluez} version 4 or later, that provides support for the core Bluetooth layers and protocols. It is flexible, efficient and uses a modular implementation. \\
 
 Current versions of BlueZ consist of many separate modules:
 \begin{itemize}
@@ -54,7 +58,7 @@ Current versions of BlueZ consist of many separate modules:
 \item Protocol decoding and analysis tools
 \end{itemize}
 
-\subsection{PulseAudio Server}
+\subsection{PulseAudio server}
 PulseAudio is a sound server for POSIX and Win32 systems. A sound server is basically a proxy for sound applications. It allows to do advanced operations on sound data as it passes between an application and the hardware. Things like transferring the audio to a different machine, changing the sample format or channel count and mixing several sounds into one are easily achieved using a sound server. In this context the main functionalities used are the audio stream control, to transfer the sound between different speakers according to the person movement and the simoultaneously playback from two or more speakers.
 
 \section{General architecture}
@@ -70,7 +74,6 @@ Inside each room there must be available:
 \item{a \textbf{Bluetooth adapter}:} it detects the received signal strength (RSSI) and sends it to the server through a very simple command-line application;
 \item{a \textbf{speaker}:} it lets out sound when the associate Bluetooth adapter is selected for playback.
 \end{itemize}
-
 
 \subsection{Bluetooth module}
 The main component of the system is the Bluetooth module, that manages the RSSI values and communications between Bluetooth hosts and device. It is based on a simple and efficient application, named \texttt{probe} and associated to every Bluetooth adapter, that is able to interface with \textbf{BlueZ} through \textbf{DBus}. In detail, every Bluetooth adapter is modeled by the class \texttt{ProbeInterface}, that allows to start and stop a discovery done by the device and to update the RSSI values when a change occurs. All \texttt{ProbeInterface} objects are controlled by the class \texttt{ProbeManager} that monitors the device localization and stores the information about every \texttt{ProbeInterface} (e.g. the room name associated with the adapter).
@@ -105,40 +108,44 @@ Input variables:
 \item \textbf{adjacencyMap}: the map stores the list of adjoining rooms for every specific room.
 \item \textbf{rssiMap}: it stores for every Bluetooth adapter the RSSI value detected.
 %\item \textbf{minNumberRssi}: min number of RSSI required to proceed with the sound playback.
-\item \textbf{maxSimultaneousSpeakers}: max number of speakers that can be activated simultanously.
+\item \textbf{maxSimultaneousSpeakers}: maximum number of speakers that can be activated simultaneously.
 \end{itemize}
-\textbf{\underline{ChooseOutputs algorithm:}}
+
 \vspace{0.3cm}
+\textbf{\textit{ChooseOutputs} algorithm:}
 \begin{algorithmic}[1]
-
-\STATE $outputs \gets null$ \COMMENT{Create the variable to return the list of speakers to activate for playback}
 \STATE $retryCount \gets 0$
-\STATE $sort$ $(rssiMap)$ \COMMENT{Sort the RSSI values}
+\STATE $outputs \gets \varnothing$
+\STATE $best \gets \varnothing$
 
-\STATE $results \gets null$
-\FOR{$i = 1$ to $ maxSimultaneouslySpeakers$}
-\STATE $results \gets results$ $\cup$ $rssiMap$ $(i)$ \COMMENT{Choose the rooms with highest RSSI with UB and insert them into $results$}
+\STATE $sorted \gets sort(rssiMap)$
+\FOR{$i = 1$ \TO $maxSimultaneousSpeakers$}
+	\STATE $best \gets best \cup sorted[i]$
 \ENDFOR
 
-\IF{($results$ is empty) \textbf{and} ($retryCount < maxRetries$)}
-\STATE $ retryCount \gets retryCount + 1 $ \COMMENT{Wait a bit more if we don't have enough data}
-\STATE GOTO 3)
+\IF{$best = \varnothing$ \textbf{and} $retryCount < maxRetries$}
+	\STATE $retryCount \gets retryCount + 1$
+	\STATE $sleep(updateInterval)$
+	\STATE \textbf{goto} 4
 \ENDIF
 
-\FOR{$i = 1$ to $ numElements$ $(results)$}
-	\IF{$ results(i) \in adjacencyMap$ $(curRooms)$}
-		\STATE $outputs \gets outputs$ $\cup$ $results(i)$ \COMMENT{Add element after intersection with rooms contiguous to the current ones}
-	\ENDIF
+\STATE $neighbors \gets \varnothing$
+\FORALL{$r \in curRooms$}
+	\STATE $neighbors \gets neighbors \cup adjacencyMap[r]$
 \ENDFOR
-\RETURN outputs
+
+\STATE $outputs \gets best \cap neighbors$
+\RETURN $outputs$
 \end{algorithmic}
+
 %In the algorithm just exposed the method \texttt{add(Object[] param1, Object param2)} symple adds \texttt{param2} to the list contains in \texttt{param1}.
 
 %\subsection{Tester}
 %bisogna mettere che i dati sono precompilati, perchè non avevamo l'HW adatto che fornisse i lvalore di RSSI in seguito a d una inquiry.
 
 \section{Operating system}
-\begin{figure}[h]
+
+\begin{figure}
 \centering
 \includegraphics[scale = 0.3]{architettura.pdf}
 \caption{Interaction between components}
@@ -146,14 +153,14 @@ Input variables:
 \end{figure}
 
 \subsection{Configuration}
-Before starting the application it is necessary to setup some parameters in the configuration file. The information to provide are:
+Before starting the application it is necessary to setup some parameters in the configuration file. The pieces of information that must be provided are:
 \begin{itemize}
 \item \texttt{maxRetries}: a threshold useful when the device is out of range to decide if the playback has to be stopped or not.
 \item \texttt{maxSimultaneousSpeakers}: the maximum number of speakers activated at the same time.
 \item \texttt{probesAddresses}: the IP addresses of Probes associated with each room.
 \item \texttt{roomsNames}: the names associated with each room.
 \item \texttt{roomsTopology}: it describes the relative localization of each room. %respect to each other.
-\item \texttt{updateInterval}: it represents an amount of time (milliseconds) after which the algorithm is repeated in a cyclic way. 
+\item \texttt{updateInterval}: the amount of time (in milliseconds) after which the algorithm is repeated in a cyclic way.
 \end{itemize}
 
 \subsection{Runtime behavior}
@@ -170,10 +177,13 @@ To verify the correct system functioning we executed some tests in a simulated e
 
 \section{Future work and conclusion}
 Here we will explain some possible project extensions.
+
 \subsection{Improve testing phase}
 Currently our application has been tested using an additional component that simulates the person movements. In detail it is a particular interface (a button) associated with each Probe application. By clicking it we can increase the RSSI value associated with the respective adapter and consequently decrease the RSSI values associated with the other adapters. However being only a simulation, the behavior doesn't totally match  with the real one. To improve the coherence and the reliability of test results it should use an hardware with specific requirements. It should arrange for each rooms, in the apartment, a Bluetooth adapter that should be able to reply to an inquiry request providing the RSSI value detected. So with the complete list of RSSI it is possible to run the algorithm with true values and choose where the playback can start.
+
 \subsection{Multiple devices}
 Although an assumption of the present project is the identification of a single smartphone, it would be important to allow the application to support and manage multiple devices. This entails the necessity to consider how different devices could interact and interfere between them.
+
 \subsection{``Mixer'': application on device}
 In our project the main application runs in the central server and the device (smartphone) is only used to localize the person. It would be interesting to develop an application for the smartphone to give the user a certain control on the audio stream. For instance with this new feature the person should be able to regulate the volume and to stop the playback. A further improvement could be an interface to navigate through the playlist, i.e. choose a specific song or skip to the previous/next track.
 
