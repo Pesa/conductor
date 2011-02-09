@@ -85,21 +85,34 @@ The PulseAudio daemon exposes two data structures in which our application is in
 \item \texttt{pa\_sink\_input}: it identifies a stream audio produced by a certain application.
 \end{itemize}
 
-To control and monitor the PulseAudio operations we implemented the class \texttt{PAController}. There are three main methods:
+To control and monitor the PulseAudio operations we implemented the class \texttt{PAController}. More over we realized a specific class hierarchy to manage the different operations performed and to detect the relations between them. There are two main operations to analyze:
 \begin{itemize}
-\item \texttt{PAController::createTunnel(QByteArray)}
-\item \texttt{PAController::moveSinkInput(SinkInput, QList<QByteArray>)}
-\item \texttt{PAController::combineTunnels(QList \\
-<QByteArray>, QString, int, QString}
+\item \texttt{MoveOperation}: it is used when the complete list of sinks is available, and it allows to redirect the \texttt{pa\_sink\_input} coming from a specific application (e.g. MPlayer) to one or more sinks associated with a speaker in each room. 
+\item \texttt{LoadModuleOperation}: it allows to load different PulseAudio modules to accomplish a specific task. In details we used two particular modules:
+	\begin{itemize}
+	\item \texttt{module-tunnel-sink}: this module creates a sink that acts as tunnel connection with the server specified as a parameter in which it's running a PulseAudio daemon.
+	\item \texttt{module-combine}: this module allows to playback sound through more speakers simultaneously. It combines more objects \texttt{pa\_sink} creating a new sink with a specified identifier.
+	\end{itemize}
 \end{itemize}
-The first method allows to create a sink that acts as tunnel connection with the server specified in the parameter in which it's running a PulseAudio daemon. This operation is done loading a particular module called \texttt{module-tunnel-sink}. When it's available the complete list of sinks, we can redirect the \texttt{pa\_sink\_input} coming from a specific application (e.g. MPlayer) to one or more sinks associated with a speaker in each room. In detail to realize this movement we implemented the second method, \texttt{moveSinkInput()}, that redirects the \texttt{SinkInput} specified in this first parameter to the speakers contained in the second one.
-By default the audio is reproduced by only one \texttt{pa\_sink}. With the third method it is possible to playback sound through more speakers simultaneously, loading the PulseAudio \texttt{module-combine} that combines more objects \texttt{pa\_sink} creating a new sink with a specified identifier.
+
+
+%
+%\begin{itemize}
+%\item \texttt{PAController::createTunnel(QByteArray)}
+%\item \texttt{PAController::moveSinkInput(SinkInput, \\ 
+%%QList<QByteArray>)}
+%\item \texttt{PAController::combineTunnels(QList \\
+%<QByteArray>, QString, int, QString}
+%\end{itemize}
+%The first method allows to create a sink that acts as tunnel connection with the server specified in the parameter in which it's running a PulseAudio daemon. This operation is done loading a particular module called \texttt{module-tunnel-sink}. When it's available the complete list of sinks, we can redirect the \texttt{pa\_sink\_input} coming from a specific application (e.g. MPlayer) to one or more sinks associated with a speaker in each room. In detail to realize this movement we implemented the second method, \texttt{moveSinkInput()}, that redirects the \texttt{SinkInput} specified in this first parameter to the speakers contained in the second one.
+%By default the audio is reproduced by only one \texttt{pa\_sink}. With the third method it is possible to playback sound through more speakers simultaneously, loading the PulseAudio \texttt{module-combine} that combines more objects \texttt{pa\_sink} creating a new sink with a specified identifier.
 
 \subsection{Algorithm}
 The implemented algorithm chooses which speaker has to playback sound according to person's location; we can suppose infact that the signal power detected by the Bluetooth adapter is higher than the other RSSI values in the room where person is situated. The following pseudo-code shows how the algorithm works. The output returned represents the index of speakers/rooms where the sound has to be reproduced.
 
-Input variables:
+Variables involved:
 \begin{itemize}
+\item \textbf{outputs}: it stores the speakers indexes detected to playback sound. 
 \item \textbf{retryCount}: it's a counter used to delay playback interruption in case the device is temporarily out of range.
 \item \textbf{maxRetries}: the threshold for the above counter, when exceeded the playback is stopped.
 %\item \textbf{sortedRssi}: the map with every devices, sorted by the RSSI value associated with each ones.
@@ -109,6 +122,8 @@ Input variables:
 \item \textbf{rssiMap}: it stores for every Bluetooth adapter the RSSI value detected.
 %\item \textbf{minNumberRssi}: min number of RSSI required to proceed with the sound playback.
 \item \textbf{maxSimultaneousSpeakers}: maximum number of speakers that can be activated simultaneously.
+\item \textbf{best}: it's a support variable to extract the indexes of the first \texttt{maxSimultaneousSpeakers} speakers with the best RSSI values. 
+\item \textbf{neighbours}: it's a support variable to store the adjoining rooms for each room contained in \texttt{curRooms}.
 \end{itemize}
 
 \vspace{0.3cm}
@@ -119,7 +134,7 @@ Input variables:
 \STATE $best \gets \varnothing$
 
 \STATE $sorted \gets sort(rssiMap)$
-\FOR{$i = 1$ \TO $maxSimultaneousSpeakers$}
+\FOR{$i = 1$ \mbox{\textbf{to}} $maxSimultaneousSpeakers$}
 	\STATE $best \gets best \cup sorted[i]$
 \ENDFOR
 
@@ -173,13 +188,21 @@ Periodically, through an inquiry, the Probes will obtain the RSSI values detecte
 \end{itemize}
 
 \section{Experiments Evaluation}
-To verify the correct system functioning we executed some tests in a simulated environment.
+To verify the correct system functioning we executed specific tests in a simulated environment. To perform tests we used two notebooks that act as speakers, for two different ``virtual'' rooms, connected via Ethernet. In the main interface application, that runs on one of these two machines, there are three areas containing:
+\begin{itemize}
+\item the complete list of available sink inputs with the corresponding identifiers; 
+\item the complete list of sinks detected with the corresponding IP addresses and identifiers;
+\item the list of rooms with an editable field, with the corresponding RSSI values, for each ones.
+\end{itemize}
+When the application, in testing mode starts, the sound is reproduced throught the speaker specified as default parameter. The user can move the audio stream from a computer to the other (or playback simultaneosly) changing the RSSI values associated with each ones. The stream is redirected to the room with an RSSI value different by \texttt{NULL}. If there isn't an RSSI value equals to \texttt{NULL} the sound is reproduced throught both speakers. Finally if both RSSI values are equal to \texttt{NULL}, the playback occurs throught the last speaker that has reproduced the sound.
+
 
 \section{Future work and conclusion}
 Here we will explain some possible project extensions.
 
 \subsection{Improve testing phase}
-Currently our application has been tested using an additional component that simulates the person movements. In detail it is a particular interface (a button) associated with each Probe application. By clicking it we can increase the RSSI value associated with the respective adapter and consequently decrease the RSSI values associated with the other adapters. However being only a simulation, the behavior doesn't totally match  with the real one. To improve the coherence and the reliability of test results it should use an hardware with specific requirements. It should arrange for each rooms, in the apartment, a Bluetooth adapter that should be able to reply to an inquiry request providing the RSSI value detected. So with the complete list of RSSI it is possible to run the algorithm with true values and choose where the playback can start.
+Currently our application has been tested using an additional component that simulates the person movements. We implemented a monitor in which an editable field for each room is available. By clicking in it, it's possible to insert a new RSSI value to simulate the person's movement (a higher value if the person is approaching to the room, a lower value otherwise).%In detail it is a particular interface (a button) associated with each Probe application.%By clicking it we can increase the RSSI value associated with the respective adapter and consequently decrease the RSSI values associated with the other adapters. 
+However being only a simulation, the behavior doesn't totally match  with the real one. To improve the coherence and the reliability of test results it should use an hardware with specific requirements. It should arrange for each rooms, in the apartment, a Bluetooth adapter that should be able to reply to an inquiry request providing the RSSI value detected. So with the complete list of RSSI it is possible to run the algorithm with true values and choose where the playback can start.
 
 \subsection{Multiple devices}
 Although an assumption of the present project is the identification of a single smartphone, it would be important to allow the application to support and manage multiple devices. This entails the necessity to consider how different devices could interact and interfere between them.
