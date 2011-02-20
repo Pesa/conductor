@@ -46,7 +46,7 @@ In figure \ref{stack} we can see the architecture of the Bluetooth protocol suit
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.4]{BTstack}
+\includegraphics[width=0.9\columnwidth]{BTstack}
 \caption{Bluetooth protocol stack}
 \label{stack}
 \end{figure}
@@ -68,7 +68,7 @@ PulseAudio is a sound server for POSIX and Win32 systems. A sound server is basi
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{PulseAudio}
-\caption{PulseAudio architecture diagram}
+\caption{High-level PulseAudio architecture}
 \end{figure}
 
 \section{General architecture}
@@ -160,19 +160,17 @@ Variables involved:
 \RETURN $outputs$
 \end{algorithmic}
 
-%In the algorithm just exposed the method \texttt{add(Object[] param1, Object param2)} symple adds \texttt{param2} to the list contains in \texttt{param1}.
-
 %\subsection{Tester}
 %bisogna mettere che i dati sono precompilati, perchè non avevamo l'HW adatto che fornisse i lvalore di RSSI in seguito a d una inquiry.
 
 \section{Operating system}
 
-\begin{figure}
+\begin{figure*}
 \centering
-\includegraphics[scale=0.3]{architettura}
+\includegraphics[width=0.8\textwidth]{architettura}
 \caption{Interaction between components}
 \label{arch}
-\end{figure}
+\end{figure*}
 
 \subsection{Configuration}
 Before starting the application it is necessary to setup some parameters in the configuration file. The pieces of information that must be provided are:
