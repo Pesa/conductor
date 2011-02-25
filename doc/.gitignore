@@ -1,4 +1,8 @@
 conductor.pdf
+slides/presentation.pdf
 *.aux
 *.log
+*.nav
 *.out
+*.snm
+*.toc
