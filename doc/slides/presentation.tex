@@ -1,4 +1,8 @@
 \documentclass{beamer}
+\usepackage{tikz}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{shapes}
+\usetikzlibrary{positioning}
 
 \usetheme{Frankfurt}
 \setbeamertemplate{navigation symbols}{}
@@ -28,12 +32,12 @@
 
 	\begin{frame}
 		\frametitle{Project's aim}
-		The \textbf{GOAL} of our application can be divided into two different parts: 
+		Our application, named \textbf{Conductor}, seeks to achieve two different goals: 
 		\pause
 		\begin{itemize}
-		\item to use Bluetooth technology to locate a person among a set of possible rooms;
+		\item first to locate a person among a set of possible rooms using Bluetooth technology;
 		\pause
-		\item to playback sound among these rooms dinamically swiching it, from one speaker to another, according to person's movements. 
+		\item secondly to redirect audio stream throught different speakers, placed in each room, according to person's movements. 
 		\end{itemize}    
 	\end{frame}
 	
@@ -51,7 +55,7 @@
 	
 	\begin{frame}
 		\frametitle{Hardware requirements}
-		To run the application there are some basic hardware requirements:
+		There are some basic hardware requirements needed in this context:
 		\pause
 		\begin{itemize}
 		\item \textbf{Smartphone}, to identify the room in which the person is.
@@ -70,21 +74,29 @@
 	
 %_____________________%
 
-\section{Main project modules}
+\section{Design and implementation}
+
+	\begin{frame}
+	\frametitle{Main project modules}
+		In our project we can identify two main modules:
+		\begin{itemize}
+		\item \textbf{Bluetooth module}
+		\item \textbf{Pulseaudio module}
+		\end{itemize}
+	\end{frame}
 
 	\begin{frame}
 		\frametitle{Bluetooth module}
-		\textbf{Probe:} a simple application implemented for each BT adapter. It can interface with BlueZ throught DBus.\\
+		\textbf{Probe:} a simple application implemented for each Bluetooth adapter. It can interface with BlueZ throught DBus. It interacts with Conductor application throught the \texttt{ProbeInterface} class. This interface can: 
+		\begin{itemize}
+		\item start/stop device discovery;
+		\item update RSSI values when a change occurs.
+		\end{itemize}
 		\vspace{0.5cm}
-		\texttt{ProbeManager}
+		The \texttt{ProbeManager} class controls the Bluetooth operations, in particular:
 		\begin{itemize}
 		\item monitors device localization;
-		\item stores information about every \texttt{ProbeInterface}
-		\end{itemize}
-		\texttt{ProbeInterface}
-		\begin{itemize}
-		\item starts/stops discovery;
-		\item updates RSSI values when a change occurs.
+		\item stores information about every \texttt{ProbeInterface}.
 		\end{itemize}
 		%The main HCI commands used in our implementation are:
 		%\begin{itemize}
@@ -98,15 +110,14 @@
 	
 	\begin{frame}
 		\frametitle{Pulseaudio module}
-		The Pulseaudio basic concepts: \textbf{sink} and \textbf{sink input}\\
-		\vspace{0.5cm}
-		\texttt{PAController} $ \rightarrow $ the class implemented to manage and control Pulseaudio operations.
+		The main class implemented to monitor Pulseaudio operations is \texttt{PAController} class. Each Pulseaudio operation is modeled by one of \texttt{PAOperation} subclasses. \\In particular we focus on these subclasses:
+
 		\begin{itemize}
-		\item \texttt{PAController::MoveOperation} - it redirects the sound to one or more different sinks.
-		\item \texttt{PAController::LoadModuleOperation} - it performs the loading of PA modules
+		\item \texttt{MoveOperation} - it redirects stream audio to one or more different sinks.
+		\item \texttt{LoadModuleOperation} - it performs the loading of Pulseaudio modules:
 			\begin{itemize}
-			\item \texttt{module-tunnel-sink} (tunnel connection with central server)
-			\item \texttt{module-combine} (simultaneous playback)
+			\item \texttt{module-tunnel-sink} (tunnel connection with central server);
+			\item \texttt{module-combine} (simultaneous playback).
 			\end{itemize}
 		\end{itemize}
 	
@@ -114,32 +125,84 @@
 	
 %_____________________%
 
-\section{Operating system}
+
 	\begin{frame}
-		\frametitle{Runtime behavior***TOFIX***}
-		\mbox{
-		\begin{minipage}[c]{5cm}
-		\includegraphics[scale = 0.25]{architettura.pdf}
-		\end{minipage}
-		\quad	
-		\begin{minipage}[c]{5cm}
-		\begin{enumerate}
-		\item Periodically \textbf{Probes} obtain RSSI value (INQUIRY)
-		\pause
-		\item If difference between new and old values higher than threshold t $\rightarrow$ update \texttt{RssiModel}
-		\pause
-		\item Algorithm runs $\rightarrow$ output
-		\pause
-		\item If output differs from current room $\rightarrow$ send request to \texttt{PAController}
-		\pause
-		\item \texttt{PAController} updates sinks according to algorithm output
-		\end{enumerate}
-		\end{minipage}		
-		}
+		\frametitle{General architecture}
+		%\mbox{
+		\begin{center}
+
+		%\begin{minipage}[c]{5cm}
+		\includegraphics[scale = 0.25]{../Arch}
+		\end{center}
+		%\setlength{\unitlength}{1cm}
+		%\onslide<1>
+		%\begin{picture}(0,0)(0,0)
+		%\color{red}
+		%\linethickness{1.5pt}
+		%\put(0,3){\line(1,0){3}}
+		%\put(0,5){\line(1,0){3}}
+		%\put(0,3){\line(0,1){2}}
+		%\put(3,3){\line(0,1){2}}
+		%\end{picture}
+		%\onslide<2->
+		%\begin{picture}(3,2)(0,0)
+		%\color{red}	
+		%\put(2,5){\line(1,0){3}}
+		%\put(2,3){\line(1,0){3}}
+		%\put(2,3){\line(0,1){2}}
+		%\put(5,3){\line(0,1){2}}
+		%\end{picture}
+		%\begin{picture}(0,0)
+		%\linethin{1.5pt}
+		%\linethickness{1.5pt}
+		%\color{red}
+		%put(3,3){\oval(2,3)}
+		%\end{picture}
+	
+		%\setlength{\unitlength}{1cm}
+		\vspace*{-8cm}\hspace{0cm}%
+		\onslide<1>
+		\begin{tikzpicture}[show background rectangle]
+		\color{red}
+       	\draw[fill=none, line width=0.3mm] (5,10) ellipse (10mm and 3mm);
+     	\onslide<2>
+       	\draw[fill=none, line width=0.3mm] (0,0) ellipse (10mm and 3mm);
+     	\onslide<3->
+       	\draw[fill=none, line width=0.3mm] (0,0) ellipse (10mm and 3mm);
+     	\end{tikzpicture}
+     	
+
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		%\end{minipage}
+		%\quad	
+		%\begin{minipage}[c]{5cm}
+		%\begin{enumerate}
+		%\item Periodically \textbf{Probes} obtain RSSI value (INQUIRY)
+		%\pause
+		%\item If difference between new and old values higher than threshold t $\rightarrow$ update \texttt{RssiModel}
+		%\pause
+		%\item Algorithm runs $\rightarrow$ output
+		%\pause
+		%item If output differs from current room $\rightarrow$ send request to \texttt{PAController}
+		%\pause
+		%\item \texttt{PAController} updates sinks according to algorithm output
+		%\end{enumerate}
+		%\end{minipage}	
+		%}
+		
 	\end{frame}
 	
 	\begin{frame}
-		\frametitle{Testing interface***YES/NO??***}
+		\frametitle{Testbed assessment}
 	\end{frame}
 	
 %______________________%
@@ -150,11 +213,11 @@
 	\begin{frame}
 		\frametitle{Future extensions}
 		\begin{itemize}
-		\item Real world testing: ....
+		\item \textbf{Real world testing:} the prototype has been tested in a simulated environment disregarding many real conditions. It is advisable to perform a more through testing session in a real-world scenario. 
 		\pause
-		\item Multiple devices managing: it could be interesting to consider a context with more than one device to locate. In this case it's necessary to evaluate how different devices could interact.
+		\item \textbf{Multiple devices managing:} it could be interesting to consider a context with more than one device to locate. This could entail problems with devices interaction that have to be considered.
 		\pause
-		\item Control's user addition: mobile application that allows to the user to control the audiostream (adjust volume, stop/pause, next/previous, \ldots)
+		\item \textbf{Control's user addition:} a mobile application that allows to the user to control the audiostream (adjust volume, stop/pause, next/previous, \ldots) could increase user interaction.
 		\end{itemize}
 	\end{frame}
 	
