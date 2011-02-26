@@ -129,7 +129,7 @@
 	\begin{frame}
 		\frametitle{General architecture}
 		\begin{center}
-		\begin{tikzpicture}[show background rectangle]
+		\begin{tikzpicture}]
     			\node[anchor=south west,inner sep=0] at (0,0) {\includegraphics[scale = 0.25]{../Arch}};
     			\onslide<2>
     			\draw[red,ultra thick,rounded corners] (2.6,5.15) ellipse (8mm and 2.5mm);
@@ -165,9 +165,9 @@
 		\frametitle{Issues raised during the implementation}
 		Here is the list of issues encountered:
 		\begin{itemize}
-		\item --- inadeguatezza dell'HW disponibile, non soddisfa i requisiti
-		\item --- Pulseaudio: tecnologia non del tutto reliable  (esperimenti non ripetibili in modo sistematico)
-		\item --- Pulseaudio operations per lo pi\`u asincrone: difficolt\`a di gestione e controllo delle stesse.
+		\item available hardware is unsuitable, it doesn't satisfy initial requirements;
+		\item transferring audio stream throught Pulseaudio is not so reliable (latency, incorrect sampling). This is a feature ...
+		\item Pulseaudio operations are asyncronous, so it's difficult to manage and control them.
 		\end{itemize}
 	\end{frame}
 	
