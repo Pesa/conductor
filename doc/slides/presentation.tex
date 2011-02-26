@@ -128,81 +128,47 @@
 
 	\begin{frame}
 		\frametitle{General architecture}
-		%\mbox{
 		\begin{center}
-
-		%\begin{minipage}[c]{5cm}
-		\includegraphics[scale = 0.25]{../Arch}
-		\end{center}
-		%\setlength{\unitlength}{1cm}
-		%\onslide<1>
-		%\begin{picture}(0,0)(0,0)
-		%\color{red}
-		%\linethickness{1.5pt}
-		%\put(0,3){\line(1,0){3}}
-		%\put(0,5){\line(1,0){3}}
-		%\put(0,3){\line(0,1){2}}
-		%\put(3,3){\line(0,1){2}}
-		%\end{picture}
-		%\onslide<2->
-		%\begin{picture}(3,2)(0,0)
-		%\color{red}	
-		%\put(2,5){\line(1,0){3}}
-		%\put(2,3){\line(1,0){3}}
-		%\put(2,3){\line(0,1){2}}
-		%\put(5,3){\line(0,1){2}}
-		%\end{picture}
-		%\begin{picture}(0,0)
-		%\linethin{1.5pt}
-		%\linethickness{1.5pt}
-		%\color{red}
-		%put(3,3){\oval(2,3)}
-		%\end{picture}
-	
-		%\setlength{\unitlength}{1cm}
-		\vspace*{-8cm}\hspace{0cm}%
-		\onslide<1>
 		\begin{tikzpicture}[show background rectangle]
-		\color{red}
-       	\draw[fill=none, line width=0.3mm] (5,10) ellipse (10mm and 3mm);
-     	\onslide<2>
-       	\draw[fill=none, line width=0.3mm] (0,0) ellipse (10mm and 3mm);
-     	\onslide<3->
-       	\draw[fill=none, line width=0.3mm] (0,0) ellipse (10mm and 3mm);
-     	\end{tikzpicture}
-     	
+    			\node[anchor=south west,inner sep=0] at (0,0) {\includegraphics[scale = 0.25]{../Arch}};
+    			\onslide<2>
+    			\draw[red,ultra thick,rounded corners] (2.6,5.15) ellipse (8mm and 2.5mm);
+    			\draw[red,ultra thick,rounded corners] (2.45,1.25) ellipse (8mm and 2.5mm);
+    			\onslide<3>
+    			\draw[red,ultra thick,rounded corners] (1.05,1.35) ellipse (8mm and 2.5mm);
+    			\onslide<4>
+    			\draw[red,ultra thick,rounded corners] (1.35,5.5) ellipse (8mm and 2.5mm);
+    			\onslide<5>
+    			\draw[red,ultra thick,rounded corners] (4.1,6.1) ellipse (17mm and 8mm);
+    			\onslide<6>
+    			\draw[red,ultra thick,rounded corners] (5.55,5.1) ellipse (8mm and 2.5mm);
+    			\onslide<7>
+		\end{tikzpicture}
 
 
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		%\end{minipage}
-		%\quad	
 		%\begin{minipage}[c]{5cm}
-		%\begin{enumerate}
-		%\item Periodically \textbf{Probes} obtain RSSI value (INQUIRY)
-		%\pause
-		%\item If difference between new and old values higher than threshold t $\rightarrow$ update \texttt{RssiModel}
-		%\pause
-		%\item Algorithm runs $\rightarrow$ output
-		%\pause
-		%item If output differs from current room $\rightarrow$ send request to \texttt{PAController}
-		%\pause
-		%\item \texttt{PAController} updates sinks according to algorithm output
-		%\end{enumerate}
-		%\end{minipage}	
-		%}
-		
+		%\includegraphics[scale = 0.25]{../Arch}
+		\end{center}
+		%\vspace*{-8cm}\hspace{0cm}%
+		%\onslide<1>
+		%\begin{tikzpicture}[show background rectangle]
+		%\color{red}
+       	%\draw[fill=none, line width=0.3mm] (2,6) ellipse (8mm and 2.5mm);
+     	%\onslide<2>
+       	%\draw[fill=none, line width=0.3mm] (0,0) ellipse (10mm and 3mm);
+     	%\onslide<3->
+       	%\draw[fill=none, line width=0.3mm] (0,0) ellipse (10mm and 3mm);
+     	%\end{tikzpicture}
 	\end{frame}
 	
 	\begin{frame}
-		\frametitle{Testbed assessment}
+		\frametitle{Issues raised during the implementation}
+		Here is the list of issues encountered:
+		\begin{itemize}
+		\item --- inadeguatezza dell'HW, non tornano il valore di RSSI
+		\item --- Pulseaudio: teconologia non del tutto reliable --> esperimenti non ripetibili
+		\item --- Pulseaudio operations per lo più asincrone: difficoltà di gestione e controllo delle stesse.
+		\end{itemize}
 	\end{frame}
 	
 %______________________%
@@ -213,7 +179,7 @@
 	\begin{frame}
 		\frametitle{Future extensions}
 		\begin{itemize}
-		\item \textbf{Real world testing:} the prototype has been tested in a simulated environment disregarding many real conditions. It is advisable to perform a more through testing session in a real-world scenario. 
+		\item \textbf{Testbed improvement:} the prototype has been tested in a simulated environment disregarding many real conditions. It can be advisable to perform a more through testing session in a real-world scenario. 
 		\pause
 		\item \textbf{Multiple devices managing:} it could be interesting to consider a context with more than one device to locate. This could entail problems with devices interaction that have to be considered.
 		\pause
@@ -225,7 +191,7 @@
 
 \section{Conclusions}
 	\begin{frame}
-		\frametitle{Final considerations***TODO***}
+		\frametitle{Final considerations}
 	\end{frame}
 
 
