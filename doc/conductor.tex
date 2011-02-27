@@ -28,7 +28,7 @@
 \maketitle
 
 \begin{abstract}
-In this paper we present a prototype application that shows how the Bluetooth technology can be used to locate a person wearing a Bluetooth device (e.g. a smartphone) among a set of rooms. The final aim is to playback an audio stream in one of these rooms and dynamically switch it from one speaker to another, according to the person's movements.
+We present a prototype application that shows how the Bluetooth technology can be used to locate a person wearing a Bluetooth device (e.g. a smartphone) among a set of rooms. The final aim is to playback an audio stream in one of these rooms and dynamically switch it from one speaker to another, according to the person's movements.
 \end{abstract}
 
 %\begin{IEEEkeywords} % normally used for peerreview paper
@@ -51,7 +51,7 @@ In figure \ref{stack} we can see the architecture of the Bluetooth protocol suit
 \label{stack}
 \end{figure}
 
-In our project we adopted a specific Bluetooth stack implementation, \textbf{BlueZ} version 4 or later, that provides support for the core Bluetooth layers and protocols. It is flexible, efficient and uses a modular implementation. Current versions of BlueZ consist of many separate modules:
+In our project we adopted a specific Bluetooth stack implementation, \textbf{BlueZ} version 4 or later, that provides support for the core Bluetooth layers and protocols. It is flexible, modular and efficient. Current versions of BlueZ consist of many separate modules:
 \begin{itemize}
 \item Bluetooth kernel subsystem core
 \item L2CAP and SCO audio kernel layers
@@ -77,48 +77,58 @@ PulseAudio is a sound server for POSIX and Win32 systems. A sound server is basi
 \label{hardware-requirements}
 Before detailing the design of the prototype, we would like to point out some basic requirements for the project. Here, we propose a list and a description for the main ones.
 \begin{itemize}
-\item{\textbf{Smartphone}:} the device used to determine the room in which the person is. For simplicity, we will assume that there is only one such device, but the prototype can trivially be extended to support an arbitrary number of devices.
-\item{\textbf{Central server}:} it runs the main control application and manages all the communication channels with the Bluetooth adapters.
+	\item{\textbf{Smartphone}:} the device used to determine the room in which the person is. For simplicity, we will assume that there is only one such device, but the prototype can trivially be extended to support an arbitrary number of devices.
+	\item{\textbf{Central server}:} it runs the main control application and manages all the communication channels with the Bluetooth adapters.
 \end{itemize}
 Inside each room there must be available:
 \begin{itemize}
-\item{a \textbf{Bluetooth adapter}:} it detects the received signal strength (RSSI) and sends it to the server through a very simple command-line application;
-\item{a \textbf{speaker}:} it lets out sound when the associate Bluetooth adapter is selected for playback.
+	\item{a \textbf{Bluetooth adapter}:} it detects the received signal strength (RSSI) and sends it to the server through a very simple command-line application;
+	\item{a \textbf{speaker}:} it lets out sound when the associate Bluetooth adapter is selected for playback.
 \end{itemize}
 
 \subsection{Bluetooth module}
 One of the most important components of the system is the Bluetooth module, that manages the RSSI values and communications between Bluetooth hosts and device. It is based on a simple and efficient application, named \texttt{probe} and associated to every Bluetooth adapter, that is able to interface with \textbf{BlueZ} through \textbf{DBus}. In detail, every Bluetooth adapter is modeled by the class \texttt{ProbeInterface}, that allows to start and stop a discovery done by the device and to update the RSSI values when a change occurs. All \texttt{ProbeInterface} objects are controlled by the class \texttt{ProbeManager} that monitors the device localization and stores the information about every \texttt{ProbeInterface} (e.g. the room name associated with the adapter).
 
-\subsection{Pulseaudio module}
-The PulseAudio daemon exposes two data structures in which our application is interested:
+\subsection{PulseAudio module}
+The PulseAudio component has three main responsibilities:
 \begin{itemize}
-\item \texttt{pa\_sink}: it represents an ``exit point'' where the audio stream can be redirected;
-\item \texttt{pa\_sink\_input}: it identifies a stream audio produced by a certain application.
+	\item \textbf{querying} the daemon for the list of available sinks and audio streams and keeping such information up-to-date;
+	\item \textbf{loading} PulseAudio modules with the appropriate configuration and \textbf{unloading} them when they are no longer needed;
+	\item \textbf{redirecting} an audio stream from one sink to another when requested by the application's logic.
 \end{itemize}
+All these operations are performed asynchronously. To keep track of in-flight operations, PulseAudio libraries return a reference-counted \texttt{pa\_operation} object for each of them.
 
-To control and monitor the PulseAudio operations we implemented the class \texttt{PAController}. More over we realized a specific class hierarchy to manage the different operations performed and to detect the relations between them. There are two main operations to analyze:
-\begin{itemize}
-\item \texttt{MoveOperation}: it is used when the complete list of sinks is available, and it allows to redirect the \texttt{pa\_sink\_input} coming from a specific application (e.g. MPlayer) to one or more sinks associated with a speaker in each room.
-\item \texttt{LoadModuleOperation}: it allows to load different PulseAudio modules to accomplish a specific task. In details we used two particular modules:
-	\begin{itemize}
-	\item \texttt{module-tunnel-sink}: this module creates a sink that acts as tunnel connection with the server specified as a parameter in which it's running a PulseAudio daemon.
-	\item \texttt{module-combine}: this module allows to playback sound through more speakers simultaneously. It combines more objects \texttt{pa\_sink} creating a new sink with a specified identifier.
-	\end{itemize}
-\end{itemize}
+Although the full introspection API is very powerful, it is also rather complex to use, being written in plain C and heavily relying on callbacks to implement asynchronous notifications. Therefore we developed a thin C++ layer on top of it, to simplify its usage by the rest of the application.
 
-%
+The two basic data structures exposed by PulseAudio, \texttt{pa\_sink} and \texttt{pa\_sink\_input}, are wrapped respectively by the classes \texttt{Sink} and \texttt{SinkInput}.
 %\begin{itemize}
-%\item \texttt{PAController::createTunnel(QByteArray)}
-%\item \texttt{PAController::moveSinkInput(SinkInput, \\
-%%QList<QByteArray>)}
-%\item \texttt{PAController::combineTunnels(QList \\
-%<QByteArray>, QString, int, QString}
+%	\item \texttt{pa\_sink}: it represents an ``exit point'' where the audio stream can be redirected;
+%	\item \texttt{pa\_sink\_input}: it identifies a stream audio produced by a certain application.
 %\end{itemize}
-%The first method allows to create a sink that acts as tunnel connection with the server specified in the parameter in which it's running a PulseAudio daemon. This operation is done loading a particular module called \texttt{module-tunnel-sink}. When it's available the complete list of sinks, we can redirect the \texttt{pa\_sink\_input} coming from a specific application (e.g. MPlayer) to one or more sinks associated with a speaker in each room. In detail to realize this movement we implemented the second method, \texttt{moveSinkInput()}, that redirects the \texttt{SinkInput} specified in this first parameter to the speakers contained in the second one.
-%By default the audio is reproduced by only one \texttt{pa\_sink}. With the third method it is possible to playback sound through more speakers simultaneously, loading the PulseAudio \texttt{module-combine} that combines more objects \texttt{pa\_sink} creating a new sink with a specified identifier.
+
+Asynchronous operations are wrapped in a similar way: each kind of operation is encapsulated by a different class, which hides all the details about how to submit that operation to the daemon and how to handle the result or a possible error. These classes are then organized into a simple hierarchy, with a common abstract base class (\texttt{PAOperation}) that offers a unified interface to execute operations, without having to worry about their type.
+
+The two most interesting \texttt{PAOperation} subclasses are:
+\begin{itemize}
+	\item \texttt{LoadModuleOperation}: loads a PulseAudio module to accomplish a specific task. In particular, our application uses the two following modules:
+	\begin{itemize}
+		\item \texttt{module-tunnel-sink} creates a new sink that forwards its input to the other end of the tunnel via a TCP connection; it requires a running PulseAudio daemon on the remote side.
+		\item \texttt{module-combine} allows playing the same audio stream through two or more sinks simultaneously. A new virtual sink is allocated and all data written to it is forwarded to every connected sink.
+	\end{itemize}
+	\item \texttt{MoveOperation}: redirects a \texttt{SinkInput} from the current sink to the specified one.
+\end{itemize}
+
+On top of everything, class \texttt{PAController} is the façade for the whole module and provides a further level of abstraction. Internally it uses the classes described above, thus avoiding most of the complexity of interfacing with PulseAudio libraries directly. Its API is simple to use and consists mainly of these two methods:
+\begin{itemize}
+\item[$\vartriangleright$] \texttt{createTunnel(QByteArray server)}
+\item[$\vartriangleright$] \texttt{moveSinkInput(SinkInput input, QList<QByteArray> speakers)}
+\end{itemize}
+The first method executes a \texttt{LoadModuleOperation} to create a tunnel sink towards the specified server. The second method redirects an arbitrary \texttt{SinkInput} to all the sinks corresponding to the specified list of speakers; this is accomplished using a \texttt{MoveOperation}, possibly preceded by the loading of an instance of \texttt{module-combine} if the list contains two or more speakers.
+
+In order to implement these features, \texttt{PAController} has often the need to perform not just a single atomic operation but many of them. However these operations must usually be executed in a well-defined sequential order. This is quite difficult to achieve directly, due to the asynchronous nature of PulseAudio APIs. Therefore we designed a dedicated class (\texttt{PAOperationQueue}) which, while keeping an asynchronous design, is able to safely handle a queue of operations by submitting them only when all their dependencies have been satisfied, i.e. after the daemon notifies that all the operations on which they depend have been completed.
 
 \subsection{Algorithm}
-The algorithm we have implemented chooses which speaker has to playback sound according to the person's location; we can suppose in fact that the signal power detected by the Bluetooth adapter is higher than the other RSSI values in the room where person is situated. The following pseudo-code shows how the algorithm works. The output returned represents the index of speakers/rooms where the sound has to be reproduced.
+The algorithm we have implemented chooses which speaker has to reproduce the sound according to the person's location; we can suppose in fact that the signal power detected by the Bluetooth adapter is higher than the other RSSI values in the room where person is situated. The following pseudo-code shows how the algorithm works. The output returned represents the index of speakers/rooms where the sound has to be reproduced.
 
 Variables involved:
 \begin{itemize}
@@ -134,7 +144,8 @@ Variables involved:
 \end{itemize}
 
 \vspace{0.3cm}
-\textbf{\textit{ChooseOutputs} algorithm:}
+\textbf{\textit{chooseOutputs()} algorithm}
+
 \begin{algorithmic}[1]
 \STATE $retryCount \gets 0$
 \STATE $outputs \gets \varnothing$
@@ -188,17 +199,18 @@ Before starting the application it is necessary to setup some parameters in the 
 In this section we will describe the system runtime behavior, showing how different components can interact and how the RSSI values are used to control the audio stream.
 Periodically, through an inquiry, the Probes will obtain the RSSI values detected with respect the smartphone. If the difference between the new and the preceeding RSSI values is higher than a fixed threshold, the Probes transmit them to the main application on the central server. This operation is executed at regular intervals to estimate in which room the person with the device is. If this is different from the room in which the playback is currently running, this information is comunicated to the \texttt{PAController} and a request is sent to move the selected audio stream to the speaker associated with the new room. At this point there are two possible scenarios according to the number of speakers that have to be activated:
 \begin{itemize}
-\item one speaker: the audio stream is directly redirected to the respective tunnel;
-\item two or more speakers: it is necessary to load the combine-module (Pulseaudio module), that creates a virtual sink to reproduce the stream through all the connected sinks (slaves).
+	\item one speaker: the audio stream is directly redirected to the respective tunnel;
+	\item two or more speakers: it is necessary to load the combine-module (PulseAudio module), that creates a virtual sink to reproduce the stream through all the connected sinks (slaves).
 \end{itemize}
 
 \section{Experiments Evaluation}
 To verify the correct system functioning we executed specific tests in a simulated environment. To perform tests we used two notebooks that act as speakers, for two different ``virtual'' rooms, connected via Ethernet. In the main interface application, that runs on one of these two machines, there are three areas containing:
 \begin{itemize}
-\item the complete list of available sink inputs with the corresponding identifiers;
-\item the complete list of sinks detected with the corresponding IP addresses and identifiers;
-\item the list of rooms with an editable field, with the corresponding RSSI values, for each ones.
-\end{itemize}
+	\item the complete list of available sink inputs with the corresponding identifiers;
+	\item the complete list of sinks detected with the corresponding IP addresses and identifiers;
+	\item the list of rooms with an editable field, with the corresponding RSSI values, for each ones.
+	\end{itemize}
+
 When the application, in testing mode starts, the sound is reproduced throught the speaker specified as default parameter. The user can move the audio stream from a computer to the other (or playback simultaneosly) changing the RSSI values associated with each ones. The stream is redirected to the room with an RSSI value different by \texttt{NULL}. If there isn't an RSSI value equals to \texttt{NULL} the sound is reproduced throught both speakers. Finally if both RSSI values are equal to \texttt{NULL}, the playback occurs throught the last speaker that has reproduced the sound.
 
 
@@ -224,7 +236,7 @@ TODO
 
 
 \begin{thebibliography}{1}
-\bibitem{Pulseaudio}
+\bibitem{PulseAudio}
 	PulseAudio Sound Server,\\
 	\url{http://www.pulseaudio.org/}
 \bibitem{PulseaudioDoc}
