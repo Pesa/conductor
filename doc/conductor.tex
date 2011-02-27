@@ -28,7 +28,7 @@
 \maketitle
 
 \begin{abstract}
-We present a prototype application that shows how the Bluetooth technology can be used to locate a person wearing a Bluetooth device (e.g. a smartphone) among a set of rooms. The final aim is to playback an audio stream in one of these rooms and dynamically switch it from one speaker to another, according to the person's movements.
+We present a prototype application that shows how the Bluetooth technology can be used to locate a person wearing a Bluetooth device (e.g. a smartphone) among a predefined set of rooms. The final aim is to reproduce an audio stream in one of these rooms and dynamically switch it from one speaker to another, according to the person's movements over time.
 \end{abstract}
 
 %\begin{IEEEkeywords} % normally used for peerreview paper
@@ -42,49 +42,47 @@ We present a prototype application that shows how the Bluetooth technology can b
 \subsection{Bluetooth technology}
 Bluetooth is an open specification for a radio system that provides the network infrastructure to enable short range wireless communication of data and voice. It comprises of a hardware component and a software component. The specification also describes usage models and user profiles for these models.
 Bluetooth supports two kinds of links: Asynchronous Connectionless (ACL) links for data transmission and Synchronous Connection Oriented (SCO) links for audio/voice transmission. It uses Frequency Hopping Spread Spectrum (FHSS) to avoid any interference. A Bluetooth channel is divided into time slots each 625 micro second in length. The devices hop through these timeslots making 1600 hops per second. This trades bandwidth efficiency for reliability, integrity and security.
-In figure \ref{stack} we can see the architecture of the Bluetooth protocol suite.
+In figure~\ref{btstack} we can see the architecture of the Bluetooth protocol suite.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\columnwidth]{BTstack}
 \caption{Bluetooth protocol stack}
-\label{stack}
+\label{btstack}
 \end{figure}
 
 In our project we adopted a specific Bluetooth stack implementation, \textbf{BlueZ} version 4 or later, that provides support for the core Bluetooth layers and protocols. It is flexible, modular and efficient. Current versions of BlueZ consist of many separate modules:
 \begin{itemize}
 \item Bluetooth kernel subsystem core
 \item L2CAP and SCO audio kernel layers
-\item RFCOMM, BNEP, CMTP and HIDP kernel implementations
+\item RFCOMM, BNEP, CMTP, HIDP kernel implementations
 \item HCI UART, USB, PCMCIA and virtual device drivers
-\item General Bluetooth and SDP libraries and daemons
+\item General Bluetooth and SDP libraries and daemon
 \item Configuration and testing utilities
 \item Protocol decoding and analysis tools
 \end{itemize}
 
 \subsection{PulseAudio server}
-PulseAudio is a sound server for POSIX and Win32 systems. A sound server is basically a proxy for sound applications. It allows to do advanced operations on sound data as it passes between an application and the hardware. Things like transferring the audio to a different machine, changing the sample format or channel count and mixing several sounds into one are easily achieved using a sound server. In this context the main functionalities used are the audio stream control, to transfer the sound between different speakers according to the person movement and the simoultaneously playback from two or more speakers.
+PulseAudio is a cross-platform, networked sound server. A sound server is basically a proxy for sound applications. It allows to do advanced operations on sound data as it passes between an application and the hardware. Things like transferring the audio to a different machine, changing the sample format or channel count and mixing several sounds into one are easily achieved using a sound server. PulseAudio is designed for Linux systems, but has been ported to Microsoft Windows, MacOS~X, Solaris, FreeBSD and other POSIX-compliant platforms. Figure~\ref{pa} depicts a high level overview of PulseAudio architecture.
 
-\begin{figure}
+\begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{PulseAudio}
 \caption{High-level PulseAudio architecture}
+\label{pa}
 \end{figure}
+
 
 \section{General architecture}
 
-\subsection{Hardware requirements}
-\label{hardware-requirements}
-Before detailing the design of the prototype, we would like to point out some basic requirements for the project. Here, we propose a list and a description for the main ones.
-\begin{itemize}
-	\item{\textbf{Smartphone}:} the device used to determine the room in which the person is. For simplicity, we will assume that there is only one such device, but the prototype can trivially be extended to support an arbitrary number of devices.
-	\item{\textbf{Central server}:} it runs the main control application and manages all the communication channels with the Bluetooth adapters.
-\end{itemize}
-Inside each room there must be available:
-\begin{itemize}
-	\item{a \textbf{Bluetooth adapter}:} it detects the received signal strength (RSSI) and sends it to the server through a very simple command-line application;
-	\item{a \textbf{speaker}:} it lets out sound when the associate Bluetooth adapter is selected for playback.
-\end{itemize}
+Our prototype consists of two different applications: \mbox{\textbf{Conductor}} and \textbf{Probe}.
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.85\textwidth]{Arch}
+\caption{Main components and interactions between them}
+\label{arch}
+\end{figure*}
 
 \subsection{Bluetooth module}
 One of the most important components of the system is the Bluetooth module, that manages the RSSI values and communications between Bluetooth hosts and device. It is based on a simple and efficient application, named \texttt{probe} and associated to every Bluetooth adapter, that is able to interface with \textbf{BlueZ} through \textbf{DBus}. In detail, every Bluetooth adapter is modeled by the class \texttt{ProbeInterface}, that allows to start and stop a discovery done by the device and to update the RSSI values when a change occurs. All \texttt{ProbeInterface} objects are controlled by the class \texttt{ProbeManager} that monitors the device localization and stores the information about every \texttt{ProbeInterface} (e.g. the room name associated with the adapter).
@@ -100,13 +98,13 @@ All these operations are performed asynchronously. To keep track of in-flight op
 
 Although the full introspection API is very powerful, it is also rather complex to use, being written in plain C and heavily relying on callbacks to implement asynchronous notifications. Therefore we developed a thin C++ layer on top of it, to simplify its usage by the rest of the application.
 
-The two basic data structures exposed by PulseAudio, \texttt{pa\_sink} and \texttt{pa\_sink\_input}, are wrapped respectively by the classes \texttt{Sink} and \texttt{SinkInput}.
+The two basic data structures at the bottom of PulseAudio, \texttt{pa\_sink} and \texttt{pa\_sink\_input}, are wrapped respectively by the classes \texttt{Sink} and \texttt{SinkInput}.
 %\begin{itemize}
 %	\item \texttt{pa\_sink}: it represents an ``exit point'' where the audio stream can be redirected;
 %	\item \texttt{pa\_sink\_input}: it identifies a stream audio produced by a certain application.
 %\end{itemize}
 
-Asynchronous operations are wrapped in a similar way: each kind of operation is encapsulated by a different class, which hides all the details about how to submit that operation to the daemon and how to handle the result or a possible error. These classes are then organized into a simple hierarchy, with a common abstract base class (\texttt{PAOperation}) that offers a unified interface to execute operations, without having to worry about their type.
+Asynchronous operations are wrapped in a similar way: each kind of operation is encapsulated by a different class, which hides all the details about how to submit that operation to the daemon and how to handle the result or a possible error. These classes are then organized into a simple hierarchy, with a common abstract base class (\texttt{PAOperation}) that exposes a unified interface to execute operations, without having to worry about their type.
 
 The two most interesting \texttt{PAOperation} subclasses are:
 \begin{itemize}
@@ -127,25 +125,29 @@ The first method executes a \texttt{LoadModuleOperation} to create a tunnel sink
 
 In order to implement these features, \texttt{PAController} has often the need to perform not just a single atomic operation but many of them. However these operations must usually be executed in a well-defined sequential order. This is quite difficult to achieve directly, due to the asynchronous nature of PulseAudio APIs. Therefore we designed a dedicated class (\texttt{PAOperationQueue}) which, while keeping an asynchronous design, is able to safely handle a queue of operations by submitting them only when all their dependencies have been satisfied, i.e. after the daemon notifies that all the operations on which they depend have been completed.
 
-\subsection{Algorithm}
-The algorithm we have implemented chooses which speaker has to reproduce the sound according to the person's location; we can suppose in fact that the signal power detected by the Bluetooth adapter is higher than the other RSSI values in the room where person is situated. The following pseudo-code shows how the algorithm works. The output returned represents the index of speakers/rooms where the sound has to be reproduced.
+\subsection{Output selection algorithm}
+This algorithm is the core of \textsl{Conductor}: it tries to figure out in which room the monitored device is currently located and, according to that, it selects the speakers that have to start reproducing sound.
 
-Variables involved:
+The algorithm proceeds as follows. First of all, it obtains the latest RSSI value associated with each room using the method \texttt{RssiModel::getRssi()}. Then the values are sorted and a heuristics is applied to the highest ones. This heuristics takes into consideration the relative position of rooms, discarding any invalid combinations from the set of selected outputs (e.g. it does not make any sense to reproduce simultaneously in two rooms which are not contiguous). Finally, if the resulting set of rooms is different from the current one, the \texttt{outputsChanged} signal is emitted, allowing the rest of the application to react accordingly.
+
+The following pseudo-code shows more precisely how the implemented algorithm works.
+
+\vspace{2mm}
+\textit{Short description of all variables involved in the algorithm}
 \begin{itemize}
-\item \textbf{outputs}: it stores the speakers indexes detected to playback sound.
-\item \textbf{retryCount}: it's a counter used to delay playback interruption in case the device is temporarily out of range.
-\item \textbf{maxRetries}: the threshold for the above counter, when exceeded the playback is stopped.
-\item \textbf{curRooms}: it's a set that contains the addresses of rooms in which the playback occurs in the current moment.
-\item \textbf{adjacencyMap}: the map stores the list of adjoining rooms for every specific room.
-\item \textbf{rssiMap}: it stores for every Bluetooth adapter the RSSI value detected.
-\item \textbf{maxSimultaneousSpeakers}: maximum number of speakers that can be activated simultaneously.
-\item \textbf{best}: it's a support variable to extract the indexes of the first \texttt{maxSimultaneousSpeakers} speakers with the best RSSI values.
-\item \textbf{neighbors}: it's a support variable to store the adjoining rooms for each room contained in \texttt{curRooms}.
+\item \texttt{adjacencyMap}: maps each room to the list of its adjoining rooms.
+\item \texttt{best}: a set containing the rooms that have the first \texttt{maxSimultaneousSpeakers} highest RSSI values.
+\item \texttt{curRooms}: the rooms where the audio stream is currently being played.
+\item \texttt{maxRetries}: maximum number of retries (see \texttt{retryCount}); when exceeded the playback should be stopped.
+\item \texttt{maxSimultaneousSpeakers}: maximum number of speakers that can be activated simultaneously.
+\item \texttt{neighbors}: the set of rooms that are contiguous to at least one room in \texttt{curRooms}.
+\item \texttt{outputs}: the new set of rooms chosen by the algorithm to reproduce the stream.
+\item \texttt{retryCount}: an integer counter used to delay playback interruption when the device temporarily falls out of range.
+\item \texttt{rssiMap}: maps each room to the last RSSI value received by the \textsl{Probe} located inside that room.
 \end{itemize}
 
-\vspace{0.3cm}
-\textbf{\textit{chooseOutputs()} algorithm}
-
+\vspace{2mm}
+\textbf{\textit{Algorithm::chooseOutputs()}}
 \begin{algorithmic}[1]
 \STATE $retryCount \gets 0$
 \STATE $outputs \gets \varnothing$
@@ -176,12 +178,18 @@ Variables involved:
 
 \section{Operating system}
 
-\begin{figure*}
-\centering
-\includegraphics[width=0.8\textwidth]{Arch}
-\caption{Interaction between components}
-\label{arch}
-\end{figure*}
+\subsection{Hardware requirements}
+\label{hardware-requirements}
+Before detailing the design of the prototype, we would like to point out some basic requirements for the project. Here, we propose a list and a description for the main ones.
+\begin{itemize}
+	\item{\textbf{Smartphone}:} the device used to determine the room in which the person is. For simplicity, we will assume that there is only one such device, but the prototype can trivially be extended to support an arbitrary number of devices.
+	\item{\textbf{Central server}:} it runs the main control application and manages all the communication channels with the Bluetooth adapters.
+\end{itemize}
+Inside each room there must be available:
+\begin{itemize}
+	\item{a \textbf{Bluetooth adapter}:} it detects the received signal strength (RSSI) and sends it to the server through a very simple command-line application;
+	\item{a \textbf{speaker}:} it lets out sound when the associate Bluetooth adapter is selected for playback.
+\end{itemize}
 
 \subsection{Configuration}
 Before starting the application it is necessary to setup some parameters in the configuration file. The pieces of information that must be provided are:
@@ -211,11 +219,11 @@ To verify the correct system functioning we executed specific tests in a simulat
 	\item the list of rooms with an editable field, with the corresponding RSSI values, for each ones.
 	\end{itemize}
 
-When the application, in testing mode starts, the sound is reproduced throught the speaker specified as default parameter. The user can move the audio stream from a computer to the other (or playback simultaneosly) changing the RSSI values associated with each ones. The stream is redirected to the room with an RSSI value different by \texttt{NULL}. If there isn't an RSSI value equals to \texttt{NULL} the sound is reproduced throught both speakers. Finally if both RSSI values are equal to \texttt{NULL}, the playback occurs throught the last speaker that has reproduced the sound.
+When the application, in testing mode starts, the sound is reproduced throught the speaker specified as default parameter. The user can move the audio stream from a computer to the other (or play simultaneously) changing the RSSI values associated with each ones. The stream is redirected to the room with an RSSI value different by \texttt{NULL}. If there isn't an RSSI value equals to \texttt{NULL} the sound is reproduced throught both speakers. Finally if both RSSI values are equal to \texttt{NULL}, the playback occurs throught the last speaker that has reproduced the sound.
 
 
 \section{Future work}
-Here we will examine some possible future extensions of the project.
+In this section we examine some possible future extensions of the project.
 
 \subsection{Real-world testing}
 The prototype has been tested through an additional user interface that allows to simulate a person's movements. This interface exposes a monitor with an editable input box for each room. By interacting with it, the user is able to insert an arbitrary RSSI value to simulate his movements among the rooms (the higher the value, the closer he is to the corresponding room). However this is just a simulation, thus the overall system behavior might be slightly different in the real-world case.
