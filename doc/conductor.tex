@@ -34,7 +34,6 @@ We present a prototype application that shows how the Bluetooth technology can b
 %\begin{IEEEkeywords} % normally used for peerreview paper
 %Bluetooth, BlueZ, DBus, PulseAudio, audio routing, smartphone.
 %\end{IEEEkeywords}
-
 %\IEEEpeerreviewmaketitle
 
 \section{Introduction}
@@ -74,13 +73,14 @@ PulseAudio is a cross-platform, networked sound server. A sound server is basica
 
 
 \section{General architecture}
+In this chapter we will explain the high-level architecture of our prototype and the major design choices we have made during its development.
 
-Our prototype consists of two different applications: \mbox{\textbf{Conductor}} and \textbf{Probe}.
+The prototype can be divided into 3 primary components, which will be described in greater detail in the next sections, plus a \textsl{Qt4} graphical user interface, that will be left out because it does not contain any noteworthy functionalities.
 
 \begin{figure*}
 \centering
 \includegraphics[width=0.85\textwidth]{Arch}
-\caption{Main components and interactions between them}
+\caption{Main classes and interactions between them}
 \label{arch}
 \end{figure*}
 
@@ -176,7 +176,7 @@ The following pseudo-code shows more precisely how the implemented algorithm wor
 %\subsection{Tester}
 %bisogna mettere che i dati sono precompilati, perchè non avevamo l'HW adatto che fornisse i lvalore di RSSI in seguito a d una inquiry.
 
-\section{Operating system}
+\section{Operating system} % implementation foobar
 
 \subsection{Hardware requirements}
 \label{hardware-requirements}
@@ -205,25 +205,26 @@ Before starting the application it is necessary to setup some parameters in the 
 \subsection{Runtime behavior}
 %description about components interaction
 In this section we will describe the system runtime behavior, showing how different components can interact and how the RSSI values are used to control the audio stream.
+
 Periodically, through an inquiry, the Probes will obtain the RSSI values detected with respect the smartphone. If the difference between the new and the preceeding RSSI values is higher than a fixed threshold, the Probes transmit them to the main application on the central server. This operation is executed at regular intervals to estimate in which room the person with the device is. If this is different from the room in which the playback is currently running, this information is comunicated to the \texttt{PAController} and a request is sent to move the selected audio stream to the speaker associated with the new room. At this point there are two possible scenarios according to the number of speakers that have to be activated:
 \begin{itemize}
 	\item one speaker: the audio stream is directly redirected to the respective tunnel;
 	\item two or more speakers: it is necessary to load the combine-module (PulseAudio module), that creates a virtual sink to reproduce the stream through all the connected sinks (slaves).
 \end{itemize}
 
-\section{Experiments Evaluation}
-To verify the correct system functioning we executed specific tests in a simulated environment. To perform tests we used two notebooks that act as speakers, for two different ``virtual'' rooms, connected via Ethernet. In the main interface application, that runs on one of these two machines, there are three areas containing:
+\section{Experimental evaluation}
+To verify that the prototype works as expected, we performed some tests in a simulated environment. The testbed consisted of two notebooks equipped with a sound card and a speaker, connected via an Ethernet cable. Each machine was simulating a different room. In the main interface application, that runs on one of the two machines, there are three areas containing:
 \begin{itemize}
 	\item the complete list of available sink inputs with the corresponding identifiers;
 	\item the complete list of sinks detected with the corresponding IP addresses and identifiers;
 	\item the list of rooms with an editable field, with the corresponding RSSI values, for each ones.
-	\end{itemize}
+\end{itemize}
 
 When the application, in testing mode starts, the sound is reproduced throught the speaker specified as default parameter. The user can move the audio stream from a computer to the other (or play simultaneously) changing the RSSI values associated with each ones. The stream is redirected to the room with an RSSI value different by \texttt{NULL}. If there isn't an RSSI value equals to \texttt{NULL} the sound is reproduced throught both speakers. Finally if both RSSI values are equal to \texttt{NULL}, the playback occurs throught the last speaker that has reproduced the sound.
 
 
 \section{Future work}
-In this section we examine some possible future extensions of the project.
+In this chapter we will examine some possible future extensions of the project.
 
 \subsection{Real-world testing}
 The prototype has been tested through an additional user interface that allows to simulate a person's movements. This interface exposes a monitor with an editable input box for each room. By interacting with it, the user is able to insert an arbitrary RSSI value to simulate his movements among the rooms (the higher the value, the closer he is to the corresponding room). However this is just a simulation, thus the overall system behavior might be slightly different in the real-world case.
