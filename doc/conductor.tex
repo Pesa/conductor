@@ -15,7 +15,8 @@
 % correct bad hyphenation here
 %\hyphenation{net-works}
 
-\title{A dynamic audio routing system\\based on the RSSI of a Bluetooth device}% Audio streams routing based on the location of a passive Bluetooth device % Using the RSSI of a BT device to dynamically route audio streams % A proximity detection system for routing audio streams based on Bluetooth technology
+
+\title{\textsl{Conductor}: an automatic audio routing system\\based on the RSSI of a passive Bluetooth device}
 \author{Davide~Pesavento, Martina~Astegno \\
 	Università degli Studi di Padova \\
 	Corso di Laurea Magistrale in Informatica \\
@@ -28,7 +29,7 @@
 \maketitle
 
 \begin{abstract}
-We present a prototype application that shows how the Bluetooth technology can be used to locate a person wearing a Bluetooth device (e.g. a smartphone) among a predefined set of rooms. The final aim is to reproduce an audio stream in one of these rooms and dynamically switch it from one speaker to another, according to the person's movements over time.
+In this paper we present a distributed application that shows how the Bluetooth technology can be used to approximately locate a person wearing a Bluetooth device (e.g. a smartphone) among a predefined set of rooms. The final result we achieved is the ability to automatically reroute the output of an audio player from one room to another, according to the person's movements over time.
 \end{abstract}
 
 %\begin{IEEEkeywords} % normally used for peerreview paper
@@ -38,7 +39,14 @@ We present a prototype application that shows how the Bluetooth technology can b
 
 \section{Introduction}
 
-\subsection{Bluetooth technology}
+\subsection{Example of a usage scenario}
+Kate is a modern housewife who likes listening to music while doing the housework. Her house is quite big though, and with just one hi-fi in the living room, she cannot hear the music loud enough when she is working in some other rooms. This issue is a major nuisance to her listening experience.
+
+%Installing a speaker in each room is not a nice solution, because she does not want to waste huge amounts of electricity to power on the speakers in rooms where she is not working at the moment.
+%She thought about installing a speaker in each room, but soon she realized that all those speakers would have required quite a bit of power to be simultaneously turned on. That seemed a waste because she is not ubiquitous!
+\textsl{Conductor} is exactly what she is looking for: she just needs to install a special kind of speaker in each room and, as long as she keeps her Bluetooth-equipped mobile phone in her pocket, she can freely move from room to room and the music smoothly follows her without interruptions.
+
+\subsection{Short-range device discovery: Bluetooth}
 Bluetooth is an open specification for a radio system that provides the network infrastructure to enable short range wireless communication of data and voice. It comprises of a hardware component and a software component. The specification also describes usage models and user profiles for these models.
 Bluetooth supports two kinds of links: Asynchronous Connectionless (ACL) links for data transmission and Synchronous Connection Oriented (SCO) links for audio/voice transmission. It uses Frequency Hopping Spread Spectrum (FHSS) to avoid any interference. A Bluetooth channel is divided into time slots each 625 micro second in length. The devices hop through these timeslots making 1600 hops per second. This trades bandwidth efficiency for reliability, integrity and security.
 In figure~\ref{btstack} we can see the architecture of the Bluetooth protocol suite.
@@ -61,7 +69,7 @@ In our project we adopted a specific Bluetooth stack implementation, \textbf{Blu
 \item Protocol decoding and analysis tools
 \end{itemize}
 
-\subsection{PulseAudio server}
+\subsection{Audio routing: PulseAudio}
 PulseAudio is a cross-platform, networked sound server. A sound server is basically a proxy for sound applications. It allows to do advanced operations on sound data as it passes between an application and the hardware. Things like transferring the audio to a different machine, changing the sample format or channel count and mixing several sounds into one are easily achieved using a sound server. PulseAudio is designed for Linux systems, but has been ported to Microsoft Windows, MacOS~X, Solaris, FreeBSD and other POSIX-compliant platforms. Figure~\ref{pa} depicts a high level overview of PulseAudio architecture.
 
 \begin{figure}[h]
