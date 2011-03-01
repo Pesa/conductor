@@ -15,8 +15,10 @@
 % correct bad hyphenation here
 %\hyphenation{net-works}
 
+\newcommand{\Conductor}{\textsl{Conductor}}
+\newcommand{\Probe}{\textsl{Probe}}
 
-\title{\textsl{Conductor}: an automatic audio routing system\\based on the RSSI of a passive Bluetooth device}
+\title{\Conductor{}: an automatic audio routing system\\based on the RSSI of a passive Bluetooth device}
 \author{Davide~Pesavento, Martina~Astegno \\
 	Università degli Studi di Padova \\
 	Corso di Laurea Magistrale in Informatica \\
@@ -40,11 +42,9 @@ In this paper we present a distributed application that shows how the Bluetooth 
 \section{Introduction}
 
 \subsection{Example of a usage scenario}
-Kate is a modern housewife who likes listening to music while doing the housework. Her house is quite big though, and with just one hi-fi in the living room, she cannot hear the music loud enough when she is working in some other rooms. This issue is a major nuisance to her listening experience.
+Jessica is a modern housewife who likes listening to music while doing the housework. Her house is quite big though, and with just one hi-fi in the living room, she cannot hear the music loud enough when she is working in some other rooms. This issue is a major nuisance to her listening experience.
 
-%Installing a speaker in each room is not a nice solution, because she does not want to waste huge amounts of electricity to power on the speakers in rooms where she is not working at the moment.
-%She thought about installing a speaker in each room, but soon she realized that all those speakers would have required quite a bit of power to be simultaneously turned on. That seemed a waste because she is not ubiquitous!
-\textsl{Conductor} is exactly what she is looking for: she just needs to install a special kind of speaker in each room and, as long as she keeps her Bluetooth-equipped mobile phone in her pocket, she can freely move from room to room and the music smoothly follows her without interruptions.
+\Conductor{} is exactly what she is looking for: she just needs to install a special kind of speaker in each room and, as long as she keeps her Bluetooth-equipped mobile phone in her pocket, she can freely move from room to room and the music smoothly follows her without interruptions.
 
 \subsection{Short-range device discovery: Bluetooth}
 Bluetooth is an open specification for a radio system that provides the network infrastructure to enable short range wireless communication of data and voice. It comprises of a hardware component and a software component. The specification also describes usage models and user profiles for these models.
@@ -62,9 +62,9 @@ In our project we adopted a specific Bluetooth stack implementation, \textbf{Blu
 \begin{itemize}
 \item Bluetooth kernel subsystem core
 \item L2CAP and SCO audio kernel layers
-\item RFCOMM, BNEP, CMTP, HIDP kernel implementations
+\item RFCOMM, BNEP, HIDP kernel implementations
 \item HCI UART, USB, PCMCIA and virtual device drivers
-\item General Bluetooth and SDP libraries and daemon
+\item Bluetooth and SDP userspace daemon (\texttt{bluetoothd})
 \item Configuration and testing utilities
 \item Protocol decoding and analysis tools
 \end{itemize}
@@ -93,7 +93,13 @@ The prototype can be divided into 3 primary components, which will be described 
 \end{figure*}
 
 \subsection{Bluetooth module}
-One of the most important components of the system is the Bluetooth module, that manages the RSSI values and communications between Bluetooth hosts and device. It is based on a simple and efficient application, named \texttt{probe} and associated to every Bluetooth adapter, that is able to interface with \textbf{BlueZ} through \textbf{DBus}. In detail, every Bluetooth adapter is modeled by the class \texttt{ProbeInterface}, that allows to start and stop a discovery done by the device and to update the RSSI values when a change occurs. All \texttt{ProbeInterface} objects are controlled by the class \texttt{ProbeManager} that monitors the device localization and stores the information about every \texttt{ProbeInterface} (e.g. the room name associated with the adapter).
+The Bluetooth component deals with the discovery of monitored devices. In particular, the class \texttt{ProbeManager} connects to all available Bluetooth adapters upon startup and then sends them appropriate commands to setup or teardown a discovery session.
+
+Since most of these adapters are not directly visible to \Conductor{} but they are instead wired up to different machine that is in turn connected to the main application via TCP, the prototype relies on another application, named \textbf{\Probe{}}, which is basically a proxy between \Conductor{} and the Bluetooth adapters. An instance of \Probe{} must be running on each node of the network that has an adapter attached to it. On the whole the application is tiny, efficient and has no GUI, thus it should even be possible to run it on embedded devices.
+
+\texttt{ProbeManager} interacts with each \Probe{} through an object of type \texttt{ProbeInterface}, derived from \texttt{QxtRPCPeer}, that completely hides the details of the network protocol used to communicate with the remote side, thus simplifying the implementation a lot.
+
+\Probe{} uses DBus to interface with BlueZ. When asked to, it begins monitoring the discoverable devices by calling \texttt{BluezAdapter::StartDiscovery()} and then waits to be notified about their presence by the signal \texttt{DeviceFound()}. While a discovery session is active, the BlueZ daemon also notifies the requesting client each time the detected RSSI changes: this allows sending the updated value to the main application as quickly as possible.
 
 \subsection{PulseAudio module}
 The PulseAudio component has three main responsibilities:
@@ -134,7 +140,7 @@ The first method executes a \texttt{LoadModuleOperation} to create a tunnel sink
 In order to implement these features, \texttt{PAController} has often the need to perform not just a single atomic operation but many of them. However these operations must usually be executed in a well-defined sequential order. This is quite difficult to achieve directly, due to the asynchronous nature of PulseAudio APIs. Therefore we designed a dedicated class (\texttt{PAOperationQueue}) which, while keeping an asynchronous design, is able to safely handle a queue of operations by submitting them only when all their dependencies have been satisfied, i.e. after the daemon notifies that all the operations on which they depend have been completed.
 
 \subsection{Output selection algorithm}
-This algorithm is the core of \textsl{Conductor}: it tries to figure out in which room the monitored device is currently located and, according to that, it selects the speakers that have to start reproducing sound.
+This algorithm is the core of \Conductor{}: it tries to figure out in which room the monitored device is currently located and, according to that, it selects the speakers that have to start reproducing sound.
 
 The algorithm proceeds as follows. First of all, it obtains the latest RSSI value associated with each room using the method \texttt{RssiModel::getRssi()}. Then the values are sorted and a heuristics is applied to the highest ones. This heuristics takes into consideration the relative position of rooms, discarding any invalid combinations from the set of selected outputs (e.g. it does not make any sense to reproduce simultaneously in two rooms which are not contiguous). Finally, if the resulting set of rooms is different from the current one, the \texttt{outputsChanged} signal is emitted, allowing the rest of the application to react accordingly.
 
@@ -151,7 +157,7 @@ The following pseudo-code shows more precisely how the implemented algorithm wor
 \item \texttt{neighbors}: the set of rooms that are contiguous to at least one room in \texttt{curRooms}.
 \item \texttt{outputs}: the new set of rooms chosen by the algorithm to reproduce the stream.
 \item \texttt{retryCount}: an integer counter used to delay playback interruption when the device temporarily falls out of range.
-\item \texttt{rssiMap}: maps each room to the last RSSI value received by the \textsl{Probe} located inside that room.
+\item \texttt{rssiMap}: maps each room to the last RSSI value received by the \Probe{} located inside that room.
 \end{itemize}
 
 \vspace{2mm}
@@ -228,7 +234,7 @@ To verify that the prototype works as expected, we performed some tests in a sim
 	\item the list of rooms with an editable field, with the corresponding RSSI values, for each ones.
 \end{itemize}
 
-When the application, in testing mode starts, the sound is reproduced throught the speaker specified as default parameter. The user can move the audio stream from a computer to the other (or play simultaneously) changing the RSSI values associated with each ones. The stream is redirected to the room with an RSSI value different by \texttt{NULL}. If there isn't an RSSI value equals to \texttt{NULL} the sound is reproduced throught both speakers. Finally if both RSSI values are equal to \texttt{NULL}, the playback occurs throught the last speaker that has reproduced the sound.
+When the application, in testing mode starts, the sound is reproduced through the speaker specified as default parameter. The user can move the audio stream from a computer to the other (or play simultaneously) changing the RSSI values associated with each ones. The stream is redirected to the room with an RSSI value different by \texttt{NULL}. If there isn't an RSSI value equals to \texttt{NULL} the sound is reproduced through both speakers. Finally if both RSSI values are equal to \texttt{NULL}, the playback occurs through the last speaker that has reproduced the sound.
 
 
 \section{Future work}
@@ -249,7 +255,11 @@ Currently the device is only used to locate the person wearing it. It would be i
 
 
 \section{Conclusions}
-TODO
+The Bluetooth technology has traditionally been considered only as a cable replacement to enable short-range data and voice communications. Our project showed how it can instead be used to detect the position of a person in a contained environment with reasonable approximation. Furthermore, the inquiry method we used resulted in an extremely low power consumption for the monitored device.
+
+PulseAudio proved to be a very advanced sound server, although some of its features were not mature enough to be able to always provide a reliable and glitch-free rerouting of audio streams. In our opinion this is an area of PulseAudio that needs more work.
+
+Overall we believe that our prototype represents a good starting point for future extensions and improvements.
 
 
 \begin{thebibliography}{1}
