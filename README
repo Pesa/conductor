@@ -1,4 +1,4 @@
-*PROGETTO di Reti Wireless*
+*** Progetto di Reti Wireless ***
 
 Questo archivio contiene:
 
@@ -7,7 +7,6 @@ Questo archivio contiene:
 - probe/ contenente il codice sorgente dell'applicazione Probe
 
 Il progetto è stato realizzato da Davide Pesavento e Martina Astegno.
-
 In particolare:
 
 - Progettazione ad alto livello: Pesavento e Astegno
@@ -18,7 +17,7 @@ In particolare:
  
 - Progettazione dettagliata e implementazione algoritmo: Astegno
 
-- Realizzazione interfaccia per testare le applicazioni: Astegno
+- Realizzazione interfaccia per testare il prototipo: Astegno
 
 - Stesura relazione: Pesavento e Astegno
 
