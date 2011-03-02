@@ -113,9 +113,7 @@ Although the full introspection API is very powerful, it is also rather complex 
 
 The two basic data structures at the bottom of PulseAudio, \texttt{pa\_sink} and \texttt{pa\_sink\_input}, are wrapped respectively by the classes \texttt{Sink} and \texttt{SinkInput}.
 
-Asynchronous operations are wrapped in a similar way: each kind of operation is encapsulated by a different class, which hides all the details about how to submit that operation to the daemon and how to handle the result or a possible error. These classes are then organized into a simple hierarchy, with a common abstract base class (\texttt{PAOperation}) that exposes a unified interface to execute operations, without having to worry about their type.
-
-The two most interesting \texttt{PAOperation} subclasses are:
+Asynchronous operations are wrapped in a similar way: each kind of operation is encapsulated by a different class, which hides all the details about how to submit that operation to the daemon and how to handle the result or a possible error. These classes are then organized into a simple hierarchy, with a common abstract base class (\texttt{PAOperation}) that exposes a unified interface to execute operations, without having to worry about their type. The two most interesting \texttt{PAOperation} subclasses are:
 \begin{itemize}
 	\item \texttt{LoadModuleOperation}: loads a PulseAudio module to accomplish a specific task. In particular, our application uses the two following modules:
 	\begin{itemize}
