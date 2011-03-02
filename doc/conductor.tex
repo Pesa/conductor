@@ -139,6 +139,7 @@ The first method executes a \texttt{LoadModuleOperation} to create a tunnel sink
 In order to implement these features, \texttt{PAController} has often the need to perform not just a single atomic operation but many of them. However these operations must usually be executed in a well-defined sequential order. This is quite difficult to achieve directly, due to the asynchronous nature of PulseAudio APIs. Therefore we designed a dedicated class (\texttt{PAOperationQueue}) which, while keeping an asynchronous design, is able to safely handle a queue of operations by submitting them only when all their dependencies have been satisfied, i.e. after the daemon notifies that all the operations on which they depend have been completed.
 
 \subsection{Output selection algorithm}
+\label{algo}
 This algorithm is the core of \Conductor{}: it tries to figure out in which room the monitored device is currently located and, according to that, it selects the speakers that have to start reproducing sound.
 
 The algorithm proceeds as follows. First of all, it obtains the latest RSSI value associated with each room using the method \texttt{RssiModel::getRssi()}. Then the values are sorted and a heuristics is applied to the highest ones. This heuristics takes into consideration the relative position of rooms, discarding any invalid combinations from the set of selected outputs (e.g. it does not make any sense to reproduce simultaneously in two rooms which are not contiguous). Finally, if the resulting set of rooms is different from the current one, the \texttt{outputsChanged} signal is emitted, allowing the rest of the application to react accordingly.
@@ -186,9 +187,6 @@ The following pseudo-code shows more precisely how the implemented algorithm wor
 \RETURN $outputs$
 \end{algorithmic}
 
-%\subsection{Tester}
-%bisogna mettere che i dati sono precompilati, perchè non avevamo l'HW adatto che fornisse i lvalore di RSSI in seguito a d una inquiry.
-
 \section{Operating system} % implementation foobar
 
 \subsection{Hardware requirements}
@@ -205,18 +203,19 @@ Inside each room there must be available:
 \end{itemize}
 
 \subsection{Configuration}
-Before starting the application it is necessary to setup some parameters in the configuration file. The pieces of information that must be provided are:
+The user is required to setup some parameters before starting the main application. Currently, we have not implemented any sophisticated configuration methods, in order to keep the prototype simple, but configuration management is entirely encapsulated inside the class \texttt{Config}, which makes it trivial to implement an alternative and more flexible backend. For the time being, the values can be directly modified inside \texttt{config.cpp} and \texttt{config.h}.
+
+Available configuration keys that must be provided are:
 \begin{itemize}
-\item \texttt{maxRetries}: a threshold useful when the device is out of range to decide if the playback has to be stopped or not.
-\item \texttt{maxSimultaneousSpeakers}: the maximum number of speakers activated at the same time.
-\item \texttt{probesAddresses}: the IP addresses of Probes associated with each room.
-\item \texttt{roomsNames}: the names associated with each room.
-\item \texttt{roomsTopology}: it describes the relative localization of each room. %respect to each other.
-\item \texttt{updateInterval}: the amount of time (in milliseconds) after which the algorithm is repeated in a cyclic way.
+\item \texttt{maxRetries}: this is directly used in the output selection algorithm to set an upper bound for \texttt{retryCount} (see section~\ref{algo}).
+\item \texttt{maxSimultaneousSpeakers}: maximum number of speakers that can be activated simultaneously.
+\item \texttt{probesAddresses}: maps each room to the IP address of the \Probe{} instance that is running there.
+\item \texttt{roomsNames}: list of names of all rooms; this value is automatically obtained from \texttt{probesAddresses} and rarely needs to be modified.
+\item \texttt{roomsTopology}: for each room, it gives the set of rooms that are contiguous to it.
+\item \texttt{updateInterval}: the amount of time (in milliseconds) between two consecutive executions of the algorithm.
 \end{itemize}
 
 \subsection{Runtime behavior}
-%description about components interaction
 In this section we will describe the system runtime behavior, showing how different components can interact and how the RSSI values are used to control the audio stream.
 
 Periodically, through an inquiry, the Probes will obtain the RSSI values detected with respect the smartphone. If the difference between the new and the preceeding RSSI values is higher than a fixed threshold, the Probes transmit them to the main application on the central server. This operation is executed at regular intervals to estimate in which room the person with the device is. If this is different from the room in which the playback is currently running, this information is comunicated to the \texttt{PAController} and a request is sent to move the selected audio stream to the speaker associated with the new room. At this point there are two possible scenarios according to the number of speakers that have to be activated:
