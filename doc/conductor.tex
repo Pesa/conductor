@@ -1,21 +1,26 @@
-\documentclass[conference]{IEEEtran}
+\documentclass{IEEEtran}
 \usepackage[utf8]{inputenc}
 \usepackage[pdftex]{hyperref}
 \usepackage{algorithmic}
 \usepackage{amssymb}
+\usepackage{flushend}
 \usepackage{graphicx}
 
 \hypersetup{
 	colorlinks,
 	linkcolor=blue,
-	pdfauthor={Davide Pesavento \& Martina Astegno}
+	pdfauthor={Davide Pesavento \& Martina Astegno},
+	pdftitle={Conductor}
 }
 
 \newcommand{\Conductor}{\textsl{Conductor}}
 \newcommand{\Probe}{\textsl{Probe}}
 
-\title{\Conductor{}: an automatic audio routing system\\based on the RSSI of a passive Bluetooth device}
-\author{Davide~Pesavento, Martina~Astegno \\
+\title{\Conductor{}: an automatic audio routing system \\
+	based on the RSSI of a passive Bluetooth device}
+
+\author{
+	Davide~Pesavento, Martina~Astegno \\
 	Università degli Studi di Padova \\
 	Corso di Laurea Magistrale in Informatica \\
 	\{dpesaven,mastegno\}@studenti.math.unipd.it
@@ -36,23 +41,22 @@ In this paper we present a distributed application that shows how the Bluetooth 
 %\IEEEpeerreviewmaketitle
 
 
-\vspace{4mm}
 \section{Introduction}
 
 \subsection{Example of a usage scenario}
-Jessica is a modern housewife who likes listening to music while doing housework. Her house is quite big though, and with just one hi-fi in the living room, she cannot hear the music loud enough when she is working in some other rooms. This issue is a major nuisance to her listening experience.
+Jessica is a modern housewife who likes listening to music while doing the housework. Her house is quite big though, and with just one hi-fi in the living room, she cannot hear the music loud enough when she is working in some other rooms. This issue is a major nuisance to her listening experience.
 
 \textbf{\Conductor{}} is exactly what she is looking for: she just needs to install a special kind of speaker in each room and, as long as she keeps her Bluetooth-equipped mobile phone in her pocket, she can freely move from room to room and the music smoothly follows her without interruptions.
 
 \subsection{Short-range device discovery: Bluetooth}
-\textbf{Bluetooth} is an open specification for a RF-based system that provides the network infrastructure to enable short range wireless communication of data and voice. It comprises a hardware component and a software component. The specification also describes usage models and user profiles for these models.
+\textbf{Bluetooth} is an open specification for a RF-based system that provides the network infrastructure to enable short range wireless communication of data and voice. It includes a hardware component and a software component. The specification also describes usage models and user profiles for these models.
 Bluetooth supports two kinds of links: \textit{Asynchronous Connectionless} (ACL) links for data transmission and \textit{Synchronous Connection Oriented} (SCO) links for audio/voice transmission. Figure~\ref{btstack} shows the various layers of Bluetooth protocol suite.
 
 Bluetooth hardware uses \textit{Frequency Hopping Spread Spectrum} (FHSS) to avoid any interferences. A Bluetooth channel is divided into time slots each 625 microseconds in length. The devices hop through these timeslots making 1600 hops per second. This trades bandwidth efficiency for reliability, integrity and security.
 
-\begin{figure}[h]
+\begin{figure}
 \centering
-\includegraphics[width=0.9\columnwidth]{BTstack}
+\includegraphics[width=.9\columnwidth]{BTstack}
 \caption{Bluetooth protocol stack}
 \label{btstack}
 \end{figure}
@@ -71,7 +75,7 @@ In our project we adopted \textbf{BlueZ} version 4 or later, the official Linux 
 \subsection{Audio routing: PulseAudio}
 \textbf{PulseAudio} is a cross-platform, networked sound server. A sound server is basically a proxy for sound applications. It allows to do advanced operations on sound data as it passes between an application and the hardware. Tasks like transferring the audio to a different machine, changing the sample format or channel count and mixing several sounds into one are easily achieved using a sound server. PulseAudio is designed for Linux systems, but has been ported to Microsoft Windows, MacOS~X, Solaris, FreeBSD and other POSIX-compliant platforms. Figure~\ref{pa} depicts a high level overview of PulseAudio architecture.
 
-\begin{figure}[h]
+\begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{PulseAudio}
 \caption{High-level PulseAudio architecture}
@@ -86,21 +90,23 @@ The prototype can be divided into 3 primary components, which will be described 
 
 \begin{figure*}
 \centering
-\includegraphics[width=0.85\textwidth]{Arch}
+\includegraphics[width=.85\textwidth]{Arch}
 \caption{Main classes and interactions between them}
 \label{arch}
 \end{figure*}
 
 \subsection{Bluetooth module}
+\label{btmod}
 The Bluetooth component deals with the discovery of monitored devices. In particular, the class \texttt{ProbeManager} connects to all available Bluetooth adapters upon startup and then sends them appropriate commands to setup or teardown a discovery session.
 
 Since most of these adapters are not directly visible to \Conductor{} but they are instead wired up to different machine that is in turn connected to the main application via TCP, the prototype relies on another application, named \textbf{\Probe{}}, which is basically a proxy between \Conductor{} and the Bluetooth adapters. An instance of \Probe{} must be running on each node of the network that has an adapter attached to it. On the whole the application is tiny, efficient and has no GUI, thus it should even be possible to run it on embedded devices.
 
 \texttt{ProbeManager} interacts with each \Probe{} through an object of type \texttt{ProbeInterface}, derived from \texttt{QxtRPCPeer}, that completely hides the details of the network protocol used to communicate with the remote side, thus greatly simplifying the implementation.
 
-\Probe{} uses \textbf{DBus} to interface with BlueZ. When asked to, it begins monitoring of the discoverable devices by calling \texttt{BluezAdapter::StartDiscovery()} and then waits to be notified about their presence by the signal \texttt{DeviceFound}. While a discovery session is active, the BlueZ daemon also notifies the requesting client each time the detected RSSI (\textit{Received Signal Strength Indicator}) changes: this allows sending the updated value to the main application as quickly as possible.
+\Probe{} uses \textbf{DBus} to interface with BlueZ. When asked to, it begins monitoring the discoverable devices by calling \texttt{BluezAdapter::StartDiscovery()} and then waits to be notified about their presence by the signal \texttt{DeviceFound}. While a discovery session is active, the BlueZ daemon also notifies the requesting client each time the detected RSSI (\textit{Received Signal Strength Indicator}) changes: this allows sending the updated value to the main application as quickly as possible.
 
 \subsection{PulseAudio module}
+\label{pamod}
 The PulseAudio component has three main responsibilities:
 \begin{itemize}
 	\item \textbf{querying} the daemon for the list of available sinks and audio streams and keeping such information up-to-date;
@@ -134,19 +140,19 @@ In order to implement these features, \texttt{PAController} has often the need t
 
 \subsection{Output selection algorithm}
 \label{algo}
-This algorithm is the core of \Conductor{}: it tries to figure out in which room the monitored device is currently located and selects the speakers that have to start reproducing sound accordingly.
+This algorithm is the core of \Conductor{}: it tries to figure out in which room the monitored device is currently located and it selects the speakers that have to start reproducing sound accordingly.
 
 The algorithm runs periodically at configurable intervals and, on each execution, it proceeds as follows. First of all, it obtains the latest RSSI value associated with each room using the method \texttt{RssiModel::getRssi()}. Then the values are sorted and a heuristics is applied to the highest ones. This heuristics takes into consideration the relative position of rooms, discarding any invalid combinations from the set of selected outputs (e.g.\ it does not make any sense to reproduce simultaneously in two rooms which are not contiguous). Finally, if the resulting set of rooms is different from the current one, the \texttt{outputsChanged} signal is emitted, eventually causing the invocation of \texttt{PAController::moveSinkInput()}.
 
 The following pseudo-code shows more precisely how the implemented algorithm works.
+\vspace{3mm}
 
-\vspace{2mm}
 \textit{Short description of all variables involved in the algorithm}
 \begin{itemize}
 \item \texttt{adjacencyMap}: maps each room to the list of its adjoining rooms.
 \item \texttt{best}: a set containing the rooms that have the first \texttt{maxSimultaneousSpeakers} highest RSSI values.
 \item \texttt{curRooms}: the rooms where the audio stream is currently being played.
-\item \texttt{maxRetries}: maximum number of retries (see \texttt{retryCount}); when exceeded the playback should be stopped.
+\item \texttt{maxRetries}: maximum number of retries (see description of \texttt{retryCount}); when exceeded the playback should be stopped.
 \item \texttt{maxSimultaneousSpeakers}: maximum number of speakers that can be activated simultaneously.
 \item \texttt{neighbors}: the set of rooms that are contiguous to at least one room in \texttt{curRooms}.
 \item \texttt{outputs}: the new set of rooms chosen by the algorithm to reproduce the stream.
@@ -154,7 +160,8 @@ The following pseudo-code shows more precisely how the implemented algorithm wor
 \item \texttt{rssiMap}: maps each room to the last RSSI value received by the \Probe{} located inside that room.
 \end{itemize}
 
-\vspace{2mm}
+\vspace{3mm}
+
 \textbf{\textit{Algorithm::chooseOutputs()}}
 \begin{algorithmic}[1]
 \STATE $retryCount \gets 0$
@@ -182,12 +189,11 @@ The following pseudo-code shows more precisely how the implemented algorithm wor
 \end{algorithmic}
 
 
-\vspace{4mm}
 \section{Prototype testing}
 Before evaluating the results of the tests performed on the prototype, we will briefly outline the setup needed to run the applications.
 
 \subsection{Hardware requirements}
-\label{hardware-requirements}
+\label{hwreqs}
 During the project specification and development we assumed the availability of a precise hardware setup.
 
 The prototype basically requires:
@@ -219,7 +225,7 @@ Due to the lack of appropriate Bluetooth hardware, we were not able to test the 
 
 The testbed consisted of two notebooks equipped with a sound card and a speaker, connected via an Ethernet cable. Each machine represented a different room.
 
-When started in testing mode, the interface of \Conductor{} allows to manually set the RSSI values associated with each room. By changing these values, the user can simulate the movements of the monitored device across rooms and check whether the system reacts correctly. Normally the stream should be reproduced by the machine with a non-empty RSSI. If both values are non-empty, the stream should be reproduced by both machines simultaneously.
+When started in testing mode, the interface of \Conductor{} allows to manually set the RSSI values associated with each room. By changing these values, the user can simulate the movements of the monitored device across rooms and check whether the system reacts correctly. Normally the stream should only be reproduced on the machine with a non-empty RSSI. If neither are empty, it should instead be reproduced on both machines simultaneously.
 
 \subsection{Experimental results}
 Overall the prototype proved to be very stable and efficient during every operation. However we discovered two noteworthy issues, probably to be attributed to the technologies we rely upon and not to our implementation.
@@ -229,25 +235,24 @@ The first problem is an inherent characteristic of the inquiry method we employe
 The second issue involves the redirection of audio streams. Soon we discovered that PulseAudio's \texttt{module-combine} and \texttt{module-tunnel-sink} are not mature enough to ensure a flawless listening experience. Indeed sometimes we heard noticeable latencies and even incorrect resampling when an audio stream had just been moved from one sink to another (possibly virtual) one.
 
 
-\vspace{4mm}
 \section{Future work}
 In this chapter we will examine some possible future extensions of the project.
 
 \subsection{Real-world testing}
 The prototype has been tested through an additional user interface that allows to simulate a person's movements. This interface exposes a monitor with an editable input box for each room. By interacting with it, the user is able to insert an arbitrary RSSI value to simulate his movements among the rooms (the higher the value, the closer he is to the corresponding room). However this is just a simulation, thus the overall system behavior might be slightly different in the real-world case.
 
-In order to improve the consistency and the reliability of test results, it is therefore advisable to perform a more thorough testing session in a real-world scenario. We could not do that due to the lack of a sufficient number of Bluetooth adapters satisfying the hardware requirements outlined in section~\ref{hardware-requirements}.
+In order to improve the consistency and the reliability of test results, it is therefore advisable to perform a more thorough testing session in a real-world scenario. We could not do that due to the lack of a sufficient number of Bluetooth adapters satisfying the hardware requirements outlined in section~\ref{hwreqs}.
 
 A more realistic testing phase could also have highlighted some shortcomings of the current algorithm and would have enabled us to fine-tune it to meet the initial expectations for the project.
 
 \subsection{Multiple monitored devices}
-In section~\ref{hardware-requirements} we assumed that there is only one device to monitor. However we believe that extending the system to be able to locate multiple devices would be a major feature. This entails the necessity of evaluating how different devices could interact, and will eventually require the development of a policy to handle conflicts between them. Once a solution to this potential issue has been found, modifying the current implementation should be trivial because the prototype has already been designed with this extension in mind, so the code is already quite generic and makes very few assumptions about the number of monitored devices.
+In section~\ref{hwreqs} we assumed that there is only one device to monitor. However we believe that extending the system to be able to locate multiple devices would be a major feature. This entails the necessity of evaluating how different devices could interact, and will eventually require the development of a policy to handle conflicts between them. Once a solution to this potential issue has been found, modifying the current implementation should be trivial because the prototype has already been designed with this extension in mind, so the code is already quite generic and makes very few assumptions about the number of monitored devices.
 
 \subsection{Lightweight control application on device}
-Currently the device is only used to locate the person wearing it. It would be interesting to develop a mobile application to give the user a certain degree of control on audio streams. For instance, with this new feature, he should be able to adjust the volume and pause or stop the playback. A further improvement could be an interface to navigate through the playlist, i.e.\ choose a specific song or skip to the previous/next track.
+Currently the device is only used to locate the person wearing it. It would be interesting to develop a mobile application to give the user a certain degree of control on audio streams. For instance, with this new feature, he should be able to adjust the volume and pause or stop the playback. A further improvement could be constituted by an interface to navigate through the playlist, i.e.\ choosing a specific song or skipping to the next/previous track.
 
 
-\vspace{4mm}
+\vspace{5mm}
 \section{Conclusions}
 The Bluetooth technology has traditionally been considered only as a cable replacement to enable short-range data and voice communications. Our project showed how it can instead be used to detect the position of a person in a contained environment with reasonable approximation. Furthermore, the inquiry method we used resulted in an extremely low power consumption for the monitored device.
 
@@ -256,17 +261,7 @@ PulseAudio proved to be a very advanced sound server, although some of its featu
 Overall we believe that our prototype represents a good starting point for future extensions and improvements.
 
 
-\vspace{4mm}
 \begin{thebibliography}{1}
-\bibitem{PulseAudio}
-	\emph{PulseAudio sound server} \\
-	\url{http://www.pulseaudio.org/}
-\bibitem{PulseAudioMod}
-	\emph{PulseAudio modules} \\
-	\url{http://pulseaudio.org/wiki/Modules}
-\bibitem{PulseAudioDoc}
-	\emph{PulseAudio API documentation} \\
-	\url{http://0pointer.de/lennart/projects/pulseaudio/doxygen/}
 \bibitem{BlueZ}
 	\emph{BlueZ: the official Linux Bluetooth protocol stack} \\
 	\url{http://www.bluez.org/}
@@ -278,6 +273,18 @@ Overall we believe that our prototype represents a good starting point for futur
 	H.~Pennington, A.~Carlsson, A.~Larsson,
 	\emph{D-Bus Specification} \\
 	\url{http://dbus.freedesktop.org/doc/dbus-specification.html}
+\bibitem{PulseAudio}
+	\emph{PulseAudio sound server} \\
+	\url{http://www.pulseaudio.org/}
+\bibitem{PulseAudioModules}
+	\emph{PulseAudio modules} \\
+	\url{http://pulseaudio.org/wiki/Modules}
+\bibitem{PulseAudioDoc}
+	\emph{PulseAudio API documentation} \\
+	\url{http://0pointer.de/lennart/projects/pulseaudio/doxygen/}
+\bibitem{PulseAudioDiagram}
+	\emph{How PulseAudio works} (adapted) \\
+	\url{http://rudd-o.com/en/linux-and-free-software/how-pulseaudio-works}
 \end{thebibliography}
 
 \end{document}
