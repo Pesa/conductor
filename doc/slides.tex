@@ -1,11 +1,17 @@
 \documentclass{beamer}
 \usepackage[utf8]{inputenc}
+\usepackage{remreset}
 \usepackage{tikz}
 
 \usetheme{Frankfurt}
 \setbeamertemplate{navigation symbols}{}
 
-\usetikzlibrary{positioning,shapes}
+\usetikzlibrary{shapes}
+
+\makeatletter
+\@removefromreset{subsection}{section}
+\makeatother
+\setcounter{subsection}{1}
 
 \title{\textbf{Conductor} \\
 	An automatic audio routing system based on \\
@@ -24,7 +30,7 @@
 \titlepage
 \end{frame}
 
-\begin{frame}[plain]
+\begin{frame}
 \frametitle{Outline}
 \tableofcontents
 \end{frame}
@@ -36,18 +42,15 @@
 \begin{frame}
 \frametitle{Project's goal}
 Our application, named \textbf{Conductor}, seeks to achieve two different goals:
-\pause
 \begin{itemize}
 	\item first to locate a person among a set of possible rooms using Bluetooth technology;
-	\pause
 	\item secondly to redirect audio stream throught different speakers, placed in each room, according to person's movements.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Tecnologies adopted}
-We adopted two principal tecnologies to achieve the goal:
-\pause
+\frametitle{Adopted technologies}
+We adopted two principal technologies to achieve the goal:
 \begin{itemize}
 	\item \textbf{Bluetooth} technology for short range wireless communications. We adopted BlueZ as Bluetooth stack implementation.\\ \textbf{HCI} status parameter $\rightarrow$ RSSI value to detect the nearest adapter to the person.
 	\pause
@@ -70,7 +73,7 @@ In the implemented prototype we can identify two basic modules:
 
 \begin{frame}
 \frametitle{Bluetooth module}
-The \textbf{Probe} rapresents the Bluetooth component core. It's a simple application implemented for each Bluetooth adapter that can interface with BlueZ throught DBus. It interacts with \textbf{Conductor} application throught a \texttt{ProbeInterface} object.\\ This interface can transparently:
+The \textbf{Probe} rapresents the Bluetooth component core. It's a simple application implemented for each Bluetooth adapter that can interface with BlueZ throught DBus. It interacts with \textsl{Conductor} application throught a \texttt{ProbeInterface} object.\\ This interface can transparently:
 \begin{itemize}
 	\item start/stop device discovery;
 	\item update RSSI values when a change occurs.
@@ -80,12 +83,6 @@ The \texttt{ProbeManager} class, in \textbf{Conductor} implementation, controls 
 	\item monitors device localization;
 	\item stores information about every \texttt{ProbeInterface} object.
 \end{itemize}
-%The main HCI commands used in our implementation are:
-%\begin{itemize}
-	%\item Link Control Commands, to search for other devices in range and to establish connection to other devices;
-	%\item Status Parameters Commands, to extract detailed information from the remote device. This includes the link quality and the RSSI value.
-%\end{itemize}
-%The choice of the speaker that has to playback sound is based on the RSSI value provided by Status Parameters commands.
 \end{frame}
 
 \begin{frame}
@@ -111,18 +108,19 @@ The Pulseaudio component has three major tasks:
 \frametitle{General architecture}
 \begin{center}
 \begin{tikzpicture}
-	\node[anchor=south west,inner sep=0] at (0,0) {\includegraphics[scale = 0.25]{Arch}};
+	[e/.style={red,very thick}]
+	\node[anchor=south west,inner sep=0] at (0, 0)	{\includegraphics[scale=.25]{Arch}};
 	\onslide<2>
-	\draw[red,ultra thick,rounded corners] (2.6,5.15) ellipse (8mm and 2.5mm);
-	\draw[red,ultra thick,rounded corners] (2.45,1.25) ellipse (8mm and 2.5mm);
+	\draw[e]	(2.6, 5.16)	ellipse[x radius=8mm, y radius=2.5mm]
+			(2.45, 1.26)	ellipse[x radius=8mm, y radius=2.5mm];
 	\onslide<3>
-	\draw[red,ultra thick,rounded corners] (1.05,1.35) ellipse (8mm and 2.5mm);
+	\draw[e]	(1.05, 1.38)	ellipse[x radius=7mm, y radius=2.5mm];
 	\onslide<4>
-	\draw[red,ultra thick,rounded corners] (1.35,5.5) ellipse (8mm and 2.5mm);
+	\draw[e]	(1.35, 5.52)	ellipse[x radius=6.5mm, y radius=2mm];
 	\onslide<5>
-	\draw[red,ultra thick,rounded corners] (4.1,6.1) ellipse (17mm and 8mm);
+	\draw[e]	(4.15, 6.1)	ellipse[x radius=18mm, y radius=8mm];
 	\onslide<6>
-	\draw[red,ultra thick,rounded corners] (5.55,5.1) ellipse (8mm and 2.5mm);
+	\draw[e]	(5.52, 5.08)	ellipse[x radius=7.5mm, y radius=2.5mm];
 	\onslide<7>
 \end{tikzpicture}
 \end{center}
@@ -130,8 +128,6 @@ The Pulseaudio component has three major tasks:
 
 \begin{frame}
 \frametitle{Hardware requirements}
-Here we list the hardware requirements.
-\pause
 \begin{itemize}
 	\item \textbf{Smartphone} identifies the room in which the person is.
 	\item \textbf{Central server} hosts the main control application.
@@ -146,7 +142,6 @@ And for each rooms:
 
 \begin{frame}
 \frametitle{Issues raised during the implementation}
-Here is the list of issues encountered.
 \begin{itemize}
 	\pause
 	\item Available hardware is unsuitable, it doesn't satisfy the previous requirements.
