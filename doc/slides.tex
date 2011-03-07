@@ -55,12 +55,13 @@
 \frametitle{Required setup}
 Globally:
 \begin{itemize}
-	\item a Bluetooth-equipped \textbf{device}, used to track the person's movements across rooms.
+	\item a Bluetooth-equipped \textbf{device}, used to track the person's movements across rooms;
 	\item a \textbf{central server}, where the audio player and the main \textsl{Conductor} application run.
 \end{itemize}
+\vspace{3mm}
 And for each room:
 \begin{itemize}
-	\item one Bluetooth \textbf{adapter}, for device discovery and monitoring.
+	\item one Bluetooth \textbf{adapter}, for device discovery and monitoring;
 	\item one \textbf{speaker}, for sound playback.
 \end{itemize}
 \end{frame}
@@ -81,7 +82,7 @@ And for each room:
 \section[Design and implementation]{Design and implementation: Bluetooth and PulseAudio components}
 
 \begin{frame}
-\frametitle{Bluetooth module}
+\frametitle{Bluetooth component}
 %\begin{itemize}
 %	\item deals with the discovery of monitored devices
 %	\item relies on a support application: \textbf{Probe}
@@ -99,22 +100,23 @@ The \texttt{ProbeManager} class, in \textbf{Conductor} implementation, controls 
 \end{frame}
 
 \begin{frame}
-\frametitle{PulseAudio module}
-The PulseAudio component has three major tasks:
+\frametitle{PulseAudio component}
+Three main responsibilities:
+\begin{enumerate}
+	\item \textbf{querying} the daemon for the list of sinks and streams;
+	\item \textbf{loading/unloading} PulseAudio modules;
+	\item \textbf{redirecting} an audio stream from one sink to another.
+\end{enumerate}
+\pause\vspace{3mm}
+Each operation is wrapped by a subclass of \texttt{PAOperation}, e.g.:
 \begin{itemize}
-	\item \textbf{querying} the daemon for the list of available sinks and audio streams;
-	\item \textbf{loading/unloading} PulseAudio modules to perform different operations;
-	\item \textbf{redirecting} audio stream from one sink to another.
+	\item \texttt{LoadModuleOperation}: loads one of the following modules:
+	\begin{description}
+		\item[\texttt{module-tunnel-sink}] $\rightarrow$ creates a virtual sink that forwards its input to a remote PulseAudio instance
+		\item[\texttt{module-combine}] $\rightarrow$ allows playing the same stream through two or more sinks simultaneously
+	\end{description}
+	\item \texttt{MoveOperation}: performs stream redirection.
 \end{itemize}
-\texttt{PAOperation} subclasses model the PA operations. In particular: \\
-\begin{itemize}
-	\item \texttt{MoveOperation} redirects audio from one sink to another.
-	\item \texttt{LoadModuleOperation} performs the loading of PA modules:
-		\begin{itemize}
-			\item \texttt{module-tunnel-sink} $\rightarrow$ tunnel connection with central server;
-			\item \texttt{module-combine} $\rightarrow$ new sink to reproduce audio simultaneously.
-		\end{itemize}
-	\end{itemize}
 \end{frame}
 
 \begin{frame}
