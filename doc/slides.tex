@@ -21,7 +21,7 @@
 	Corso di Laurea Magistrale in Informatica}
 \date{\today}
 
-\renewcommand{\baselinestretch}{1.1}
+\renewcommand{\baselinestretch}{1.2}
 
 
 \begin{document}
@@ -37,43 +37,56 @@
 
 %_____________________%
 
-\section{Introduction}
+\section[Introduction]{Introduction: goals and requirements}
 
 \begin{frame}
-\frametitle{Project's goal}
-Our application, named \textbf{Conductor}, seeks to achieve two different goals:
+\frametitle{Project's goals}
+\setbeamercovered{transparent}
+\begin{enumerate}
+	\pause
+	\item \textbf{Locating} a person wearing a Bluetooth device among a predefined set of rooms.
+	\pause\vspace{1cm}
+	\item \textbf{Redirecting} the output of an audio player from one room to another, according to the person's movements.
+\end{enumerate}
+\setbeamercovered{invisible}
+\end{frame}
+
+\begin{frame}
+\frametitle{Required setup}
+Globally:
 \begin{itemize}
-	\item first to locate a person among a set of possible rooms using Bluetooth technology;
-	\item secondly to redirect audio stream throught different speakers, placed in each room, according to person's movements.
+	\item a Bluetooth-equipped \textbf{device}, used to track the person's movements across rooms.
+	\item a \textbf{central server}, where the audio player and the main \textsl{Conductor} application run.
+\end{itemize}
+And for each room:
+\begin{itemize}
+	\item one Bluetooth \textbf{adapter}, for device discovery and monitoring.
+	\item one \textbf{speaker}, for sound playback.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Adopted technologies}
-We adopted two principal technologies to achieve the goal:
-\begin{itemize}
-	\item \textbf{Bluetooth} technology for short range wireless communications. We adopted BlueZ as Bluetooth stack implementation.\\ \textbf{HCI} status parameter $\rightarrow$ RSSI value to detect the nearest adapter to the person.
-	\pause
-	\item \textbf{Pulseaudio}, a sound server that acts as proxy for sound applications. It redirects audio streams according to person's movements or allows simoultaneos playbacks by more speakers.
-\end{itemize}
+\frametitle{Employed technologies}
+\begin{center}
+{\large Short-range device discovery $\Rightarrow$ \textbf{BlueZ}} \\\vspace{2mm}
+{\footnotesize the official Linux Bluetooth stack implementation,\\exposes an easy-to-use DBus interface}
+\\\vspace{1cm}
+{\large Audio routing $\Rightarrow$ \textbf{PulseAudio}} \\\vspace{2mm}
+{\footnotesize a cross-platform, networked sound server that allows\\to perform advanced operations on audio data}
+\end{center}
 \end{frame}
 
 %_____________________%
 
-\section{Design and implementation}
-
-\begin{frame}
-\frametitle{Main project modules}
-In the implemented prototype we can identify two basic modules:
-\begin{itemize}
-	\item \textbf{Bluetooth module}
-	\item \textbf{Pulseaudio module}
-	\end{itemize}
-\end{frame}
+\section[Design and implementation]{Design and implementation: Bluetooth and PulseAudio components}
 
 \begin{frame}
 \frametitle{Bluetooth module}
-The \textbf{Probe} rapresents the Bluetooth component core. It's a simple application implemented for each Bluetooth adapter that can interface with BlueZ throught DBus. It interacts with \textsl{Conductor} application throught a \texttt{ProbeInterface} object.\\ This interface can transparently:
+%\begin{itemize}
+%	\item deals with the discovery of monitored devices
+%	\item relies on a support application: \textbf{Probe}
+%\end{itemize}
+The \textbf{Probe} represents the Bluetooth component core. It's a simple application implemented for each Bluetooth adapter that can interface with BlueZ throught DBus. It interacts with \textsl{Conductor} application throught a \texttt{ProbeInterface} object.\\ This interface can transparently:
 \begin{itemize}
 	\item start/stop device discovery;
 	\item update RSSI values when a change occurs.
@@ -86,11 +99,11 @@ The \texttt{ProbeManager} class, in \textbf{Conductor} implementation, controls 
 \end{frame}
 
 \begin{frame}
-\frametitle{Pulseaudio module}
-The Pulseaudio component has three major tasks:
+\frametitle{PulseAudio module}
+The PulseAudio component has three major tasks:
 \begin{itemize}
 	\item \textbf{querying} the daemon for the list of available sinks and audio streams;
-	\item \textbf{loading/unloading} Pulseaudio modules to perform different operations;
+	\item \textbf{loading/unloading} PulseAudio modules to perform different operations;
 	\item \textbf{redirecting} audio stream from one sink to another.
 \end{itemize}
 \texttt{PAOperation} subclasses model the PA operations. In particular: \\
@@ -126,44 +139,18 @@ The Pulseaudio component has three major tasks:
 \end{center}
 \end{frame}
 
-\begin{frame}
-\frametitle{Hardware requirements}
-\begin{itemize}
-	\item \textbf{Smartphone} identifies the room in which the person is.
-	\item \textbf{Central server} hosts the main control application.
-\end{itemize}
-\pause
-And for each rooms:
-\begin{itemize}
-	\item a \textbf{speaker} that lets out sound when selected to reproduce audio;
-	\item a \textbf{Bluetooth adapter} that detects the RSSI value and sends it to the server.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Issues raised during the implementation}
-\begin{itemize}
-	\pause
-	\item Available hardware is unsuitable, it doesn't satisfy the previous requirements.
-	\pause
-	\item Transferring audio stream throught Pulseaudio is not so reliable (latency, incorrect sampling). Clearly this is not a mature feature.
-	\pause
-	\item Pulseaudio operations are asyncronous, so it's difficult to manage and control them.
-\end{itemize}
-\end{frame}
-
 %______________________%
 
-\section{Future work and possible extensions}
+\section{Possible extensions}
 
 \begin{frame}
 \frametitle{Future extensions}
 \begin{itemize}
-	\item \textbf{Testbed improvement:} the prototype has been tested in a simulated environment disregarding many real conditions. It can be advisable to perform a more through testing session in a real-world scenario.
+	\item \textbf{Testbed improvements:} the prototype has only been tested in a simulated environment. It would be interesting to perform a more thorough testing session in a real-world scenario.
 	\pause
-	\item \textbf{Multiple devices managing:} it could be interesting to consider a context with more than one device to locate. This could entail problems with devices interaction that have to be considered.
+	\item \textbf{Multiple monitored devices:} adding support for more than one device would be a major feature. This entails the necessity of evaluating how different devices could interact.
 	\pause
-	\item \textbf{Control's user addition:} a mobile application that allows to the user to control the audiostream (adjust volume, stop/pause, next/previous, \ldots) could increase user interaction.
+	\item \textbf{Control application:} develop a mobile application that allows the end user to control audio streams, e.g.\ adjusting the volume, pausing, managing the playlist, \ldots
 \end{itemize}
 \end{frame}
 
@@ -172,22 +159,40 @@ And for each rooms:
 \section{Conclusions}
 
 \begin{frame}
-\frametitle{Final considerations}
+\frametitle{Issues experienced}
 \begin{itemize}
-	\item Bluetooth technology: low energy, but variability in managing RSSI values.
+	\item Available Bluetooth hardware was unsuitable, it did not satisfy needed requirements.
 	\pause
-	\item Pulseaudio: the audio stream transferring is not reliable.
+	\item PulseAudio is not fully reliable when tunneling and moving streams (excessive latency, incorrect resampling).
 	\pause
-	\item Prototype: it's a good starting point for future improvements and extensions.
+	\item All PulseAudio operations are executed asynchronously, it has been difficult to properly handle them.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
+\frametitle{Final considerations}
+\begin{itemize}
+	\item Bluetooth: very low power consumption, but high variance in reported RSSI values.
+	\item PulseAudio: quite advanced and featureful, but some areas need more polishing.
+	\item Prototype: overall it is a good starting point for future extensions and improvements.
+\end{itemize}
+\end{frame}
+
+%______________________%
+
+\appendix
+
+\begin{frame}
 \frametitle{References}
 \begin{itemize}
-	\item \textbf{PulseAudio Sound Server} \\ \url{http://www.pulseaudio.org/}
-	\item \textbf{PulseAudio API documentation} \\ \url{http://0pointer.de/lennart/projects/pulseaudio/doxygen/}
-	\item \textbf{BlueZ: the official Linux Bluetooth protocol stack} \\ \url{http://www.bluez.org/}
+	\item[$\vartriangleright$] \textbf{BlueZ: the official Linux Bluetooth protocol stack} \\
+			{\footnotesize\url{http://www.bluez.org/}}
+	\item[$\vartriangleright$] Marcel~Holtmann, \textbf{Playing BlueZ on the D-Bus} \\
+			{\footnotesize\url{www.kernel.org/doc/ols/2006/ols2006v1-pages-421-426.pdf}}
+	\item[$\vartriangleright$] \textbf{PulseAudio sound server} \\
+			{\footnotesize\url{http://www.pulseaudio.org/}}
+	\item[$\vartriangleright$] \textbf{PulseAudio API documentation} \\
+			{\footnotesize\url{http://0pointer.de/lennart/projects/pulseaudio/doxygen/}}
 \end{itemize}
 \end{frame}
 
