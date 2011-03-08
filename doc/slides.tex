@@ -71,7 +71,7 @@ And for each room:
 \begin{center}
 {\large Short-range device discovery $\Rightarrow$ \textbf{BlueZ}} \\\vspace{2mm}
 {\footnotesize the official Linux Bluetooth stack implementation,\\exposes an easy-to-use DBus interface}
-\\\vspace{1cm}
+\\\pause\vspace{1cm}
 {\large Audio routing $\Rightarrow$ \textbf{PulseAudio}} \\\vspace{2mm}
 {\footnotesize a cross-platform, networked sound server that allows\\to perform advanced operations on audio data}
 \end{center}
@@ -79,23 +79,24 @@ And for each room:
 
 %_____________________%
 
-\section[Design and implementation]{Design and implementation: Bluetooth and PulseAudio components}
+\section[Prototype design]{Prototype design: Bluetooth and PulseAudio components}
 
 \begin{frame}
 \frametitle{Bluetooth component}
-%\begin{itemize}
-%	\item deals with the discovery of monitored devices
-%	\item relies on a support application: \textbf{Probe}
-%\end{itemize}
-The \textbf{Probe} represents the Bluetooth component core. It's a simple application implemented for each Bluetooth adapter that can interface with BlueZ throught DBus. It interacts with \textsl{Conductor} application throught a \texttt{ProbeInterface} object.\\ This interface can transparently:
+The Bluetooth component deals with the discovery and monitoring of the mobile device.
 \begin{itemize}
-	\item start/stop device discovery;
-	\item update RSSI values when a change occurs.
-\end{itemize}
-The \texttt{ProbeManager} class, in \textbf{Conductor} implementation, controls the Bluetooth operations. In particular:
-\begin{itemize}
-	\item monitors device localization;
-	\item stores information about every \texttt{ProbeInterface} object.
+	\item It relies on \textbf{Probe}, a simple CLI application.
+	\begin{itemize}
+		\item one instance for each Bluetooth adapter
+		\item basically a proxy between \textsl{Conductor} and the adapters
+		\item \textbf{DBus} is used to interface with the BlueZ daemon
+	\end{itemize}
+	\item It controls all BT operations via the \texttt{ProbeManager} class.
+	\begin{itemize}
+		\item it connects to all available \textsl{Probe}s upon startup
+		\item it sends them commands to start or stop a discovery session
+		\item it emits a signal when the RSSI detected by a \textsl{Probe} changes
+	\end{itemize}
 \end{itemize}
 \end{frame}
 
