@@ -41,14 +41,12 @@
 
 \begin{frame}
 \frametitle{Project's goals}
-\setbeamercovered{transparent}
 \begin{enumerate}
-	\pause
+\setlength{\itemsep}{1cm}
 	\item \textbf{Locating} a person wearing a Bluetooth device among a predefined set of rooms.
-	\pause\vspace{1cm}
+	\pause
 	\item \textbf{Redirecting} the output of an audio player from one room to another, according to the person's movements.
 \end{enumerate}
-\setbeamercovered{invisible}
 \end{frame}
 
 \begin{frame}
@@ -58,7 +56,7 @@ Globally:
 	\item a Bluetooth-equipped \textbf{device}, used to track the person's movements across rooms;
 	\item a \textbf{central server}, where the audio player and the main \textsl{Conductor} application run.
 \end{itemize}
-\vspace{3mm}
+\vspace{2mm}
 And for each room:
 \begin{itemize}
 	\item one Bluetooth \textbf{adapter}, for device discovery and monitoring;
@@ -71,7 +69,7 @@ And for each room:
 \begin{center}
 {\large Short-range device discovery $\Rightarrow$ \textbf{BlueZ}} \\\vspace{2mm}
 {\footnotesize the official Linux Bluetooth stack implementation,\\exposes an easy-to-use DBus interface}
-\\\pause\vspace{1cm}
+\\\vspace{1cm}
 {\large Audio routing $\Rightarrow$ \textbf{PulseAudio}} \\\vspace{2mm}
 {\footnotesize a cross-platform, networked sound server that allows\\to perform advanced operations on audio data}
 \end{center}
@@ -108,7 +106,7 @@ Three main responsibilities:
 	\item \textbf{loading/unloading} PulseAudio modules;
 	\item \textbf{redirecting} an audio stream from one sink to another.
 \end{enumerate}
-\pause\vspace{3mm}
+\pause\vspace{2mm}
 Each operation is wrapped by a subclass of \texttt{PAOperation}, e.g.:
 \begin{itemize}
 	\item \texttt{LoadModuleOperation}: loads one of the following modules:
@@ -121,7 +119,7 @@ Each operation is wrapped by a subclass of \texttt{PAOperation}, e.g.:
 \end{frame}
 
 \begin{frame}
-\frametitle{General architecture}
+\frametitle{High-level architecture}
 \begin{center}
 \begin{tikzpicture}
 	[e/.style={red,very thick}]
@@ -144,10 +142,26 @@ Each operation is wrapped by a subclass of \texttt{PAOperation}, e.g.:
 
 %______________________%
 
-\section{Possible extensions}
+\section{Implementation issues}
 
 \begin{frame}
-\frametitle{Future extensions}
+\frametitle{Issues experienced}
+\begin{itemize}
+\setlength{\itemsep}{5mm}
+	\item Available Bluetooth hardware was unsuitable, it did not satisfy needed requirements.
+	\pause
+	\item PulseAudio is not fully reliable when tunneling and moving streams (excessive latency, incorrect resampling).
+	\pause
+	\item All PulseAudio operations are executed asynchronously, it has been difficult to properly handle them.
+\end{itemize}
+\end{frame}
+
+%______________________%
+
+\section[Conclusions]{Conclusions and possible extensions}
+
+\begin{frame}
+\frametitle{Possible extensions}
 \begin{itemize}
 	\item \textbf{Testbed improvements:} the prototype has only been tested in a simulated environment. It would be interesting to perform a more thorough testing session in a real-world scenario.
 	\pause
@@ -157,24 +171,10 @@ Each operation is wrapped by a subclass of \texttt{PAOperation}, e.g.:
 \end{itemize}
 \end{frame}
 
-%______________________%
-
-\section{Conclusions}
-
-\begin{frame}
-\frametitle{Issues experienced}
-\begin{itemize}
-	\item Available Bluetooth hardware was unsuitable, it did not satisfy needed requirements.
-	\pause
-	\item PulseAudio is not fully reliable when tunneling and moving streams (excessive latency, incorrect resampling).
-	\pause
-	\item All PulseAudio operations are executed asynchronously, it has been difficult to properly handle them.
-\end{itemize}
-\end{frame}
-
 \begin{frame}
 \frametitle{Final considerations}
 \begin{itemize}
+\setlength{\itemsep}{5mm}
 	\item Bluetooth: very low power consumption, but high variance in reported RSSI values.
 	\item PulseAudio: quite advanced and featureful, but some areas need more polishing.
 	\item Prototype: overall it is a good starting point for future extensions and improvements.
